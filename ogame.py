@@ -1,21 +1,14 @@
 #!/usr/bin/python
 from selenium import selenium
-PLANETS = {
-        2: {'galaxy': 5, 'system': 57, 'position': 5},
-        3: {'galaxy': 5, 'system': 57, 'position': 6},
-        4: {'galaxy': 5, 'system': 57, 'position': 7},
-        5: {'galaxy': 5, 'system': 58, 'position': 7},
-        6: {'galaxy': 5, 'system': 58, 'position': 10},
-        7: {'galaxy': 5, 'system': 58, 'position': 11}}
+
 
 class Ogame(selenium):
 
-    def __init__(self, login, password, mother=None):
+    def __init__(self, mother=None, planets=[]):
         selenium.__init__(self,
 				"localhost", 4444, "*chrome", "http://ogame.fr/")
+        self.mother, self.planets = mother, planets
         self.start()
-        self.login(login, password)
-        self.mother = mother
 
     def __del__(self):
         self.stop()
@@ -30,7 +23,8 @@ class Ogame(selenium):
         self.wait_for_page_to_load("30000")
 
     def go_to(self, planet, page):
-        self.click("//div[@id='myPlanets']/div[%d]/a" % planet)
+        self.click("//div[@id='myPlanets']/div[%d]/a"
+                % (self.planets.index(planet) + 2))
         self.wait_for_page_to_load("30000")
         self.click("link=%s" % page)
         self.wait_for_page_to_load("30000")
@@ -45,9 +39,9 @@ class Ogame(selenium):
         self.click("css=#continue > span")
         self.wait_for_page_to_load("30000")
 
-        self.type("id=galaxy", PLANETS[dst]["galaxy"])
-        self.type("id=system", PLANETS[dst]["system"])
-        self.type("id=position", PLANETS[dst]["position"])
+        self.type("id=galaxy", dst[0])
+        self.type("id=system", dst[1])
+        self.type("id=position", dst[2])
         self.click("id=pbutton")
         self.click("css=#continue > span")
         self.wait_for_page_to_load("30000")
@@ -60,9 +54,8 @@ class Ogame(selenium):
 
     def rapatriate(self, dst=None):
         dst = dst if dst is not None else self.mother
-        for planet in PLANETS:
-            if PLANETS[dst] == PLANETS[planet]:
-                continue
-            self.send_ressources(planet, dst)
+        for src in self.planets:
+            if dst != src:
+                self.send_ressources(src, dst)
 
 # vim: set et sts=4 sw=4 tw=120:
