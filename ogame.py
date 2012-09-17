@@ -24,7 +24,7 @@ class Ogame(selenium):
 
     def go_to(self, planet, page):
         self.click("//div[@id='planetList']/div[%d]/a"
-                % (self.planets.index(planet)))
+                % (self.planets.index(planet) + 1))
         self.wait_for_page_to_load("30000")
         self.click("link=%s" % page)
         self.wait_for_page_to_load("30000")
