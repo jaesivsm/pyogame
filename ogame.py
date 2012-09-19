@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 """
 Outil en ligne de commande pour inscrire des actions
 à exécuter ou pour les exécuter directement.
