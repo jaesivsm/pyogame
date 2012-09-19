@@ -1,0 +1,13 @@
+########### DEV ###########
+Installation de l'environnement de dev :
+
+    * Installation du paquet de binding avec selenium
+        > aptitude install python-selenium
+
+    * Server d'application selenium :
+        > wget http://selenium.googlecode.com/files/selenium-server-standalone-2.25.0.jar
+        > java -jar selenium-server-standalone-2.25.0.jar
+        Le server se bindera sur 0.0.0.0:4444, et la lib_ogame se connectera sur ce port par défaut.
+
+
+# vim: set et sts=4 sw=4 tw=120:
