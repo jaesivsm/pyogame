@@ -36,7 +36,7 @@ class Ogame(selenium):
         #deut = content.get('deut', 'all')
 
         self.go_to(src, 'Flotte')
-        self.click("link=Grand transporteur 4")
+        self.click("//ul[@id='civil']/li[2]/div/a")
         self.click("css=#continue > span")
         self.wait_for_page_to_load("30000")
 
