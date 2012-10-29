@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 from selenium import selenium
 
+DEFAULT_WAIT_TIME = 40000
 
 class Ogame(selenium):
 
@@ -21,14 +22,14 @@ class Ogame(selenium):
         self.type("id=usernameLogin", login)
         self.type("id=passwordLogin", passwd)
         self.click("id=loginSubmit")
-        self.wait_for_page_to_load("30000")
+        self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
     def go_to(self, planet, page):
         self.click("//div[@id='planetList']/div[%d]/a"
                 % (self.planets.index(planet) + 1))
-        self.wait_for_page_to_load("30000")
+        self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
         self.click("link=%s" % page)
-        self.wait_for_page_to_load("30000")
+        self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
     def send_ressources(self, src, dst, content={}):
         #metal = content.get('metal', 'all')
@@ -38,20 +39,20 @@ class Ogame(selenium):
         self.go_to(src, 'Flotte')
         self.click("//ul[@id='civil']/li[2]/div/a")
         self.click("css=#continue > span")
-        self.wait_for_page_to_load("30000")
+        self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
         self.type("id=galaxy", dst[0])
         self.type("id=system", dst[1])
         self.type("id=position", dst[2])
         self.click("id=pbutton")
         self.click("css=#continue > span")
-        self.wait_for_page_to_load("30000")
+        self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
         self.click("css=#missionButton3")
         #if metal == 'all' and cristal == 'all' and deut == 'all':
         self.click("css=#allresources > img")
         self.click("css=#start > span")
-        self.wait_for_page_to_load("30000")
+        self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
     def rapatriate(self, dst=None):
         dst = dst if dst is not None else self.mother
