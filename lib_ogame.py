@@ -58,6 +58,9 @@ class Ogame(selenium):
         dst = dst if dst is not None else self.mother
         for src in self.planets:
             if dst != src:
-                self.send_ressources(src, dst)
+                try:
+                    self.send_ressources(src, dst)
+                except Exception:
+                    pass
 
 # vim: set et sts=4 sw=4 tw=120:
