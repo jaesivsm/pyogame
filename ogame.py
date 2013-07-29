@@ -8,6 +8,8 @@ import sys
 import json
 import lib_ogame
 
+from pyogame import interface, utils
+
 CONF_PATH = 'conf.json'
 
 
@@ -16,7 +18,9 @@ if __name__ == "__main__":
         conf = json.load(conf_file)
     user = sys.argv[1]
 
-    session = lib_ogame.Ogame(conf[user]['mother'], conf[user]['planets'])
+    utils.set_logger()
+
+    session = interface.Ogame(conf[user]['mother'], conf[user]['planets'])
     session.login(user, conf[user]['password'])
     session.rapatriate(conf[user]['mother'])
 # vim: set et sts=4 sw=4 tw=120:
