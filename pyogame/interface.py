@@ -5,6 +5,8 @@ import logging
 from selenium import selenium
 
 logger = logging.getLogger(__name__)
+from pyogame import planets, ships
+
 DEFAULT_WAIT_TIME = 40000
 
 class Ogame(selenium):
@@ -36,19 +38,20 @@ class Ogame(selenium):
         return self.get_text(xpath).split(split_on)
 
     def update_planet_resources(self, planet):
-        logger.info('updating ressources on planet %r' % planet['name'])
-        planet['resources'] = {}
+        logger.info('updating ressources on planet %r' % planet)
+        planet.resources = {}
         try:
             for res_type in ['metal_box', 'crystal_box',
                     'deuterium_box', 'energy_box']:
                 res = self.__split_text("//li[@id='%s']" % res_type, '.')
-                planet['resources'][res_type[:-4]] = int(''.join(res))
+                planet.resources[res_type[:-4]] = int(''.join(res))
         except Exception, error:
+            logger.error("ERROR: Couldn't update ressources")
             logger.error(error)
 
     def update_planet_buildings(self, planet):
-        logger.info('updating buildings states for planet %r' % planet['name'])
-        planet['constructions'] = constructions = {}
+        logger.info('updating buildings states for %r' % planet)
+        planet.constructions = constructions = {}
         try:
             for ctype in ('building', 'storage'):
                 for const in self.__split_text("//ul[@id='%s']" % ctype):
@@ -58,17 +61,18 @@ class Ogame(selenium):
                     name, level = const.strip().rsplit(' ', 1)
                     constructions[ctype][name] = int(''.join(level.split('.')))
         except Exception, error:
+            logger.error("ERROR: Couldn't update building states")
             logger.error(error)
 
     def update_planet_fleet(self, planet):
-        logger.info('updating fleet states on planet %r' % planet['name'])
-        planet['fleet'] = {}
+        logger.info('updating fleet states on %r' % planet)
+        planet.fleet = ships.Fleet()
         try:
             for fleet_type in ('military', 'civil'):
-                planet['fleet'][fleet_type] = {}
                 for fleet in self.__split_text("//ul[@id='%s']" % fleet_type):
-                    name, quantity = fleet.strip().rsplit(' ', 1)
+                    planet.fleet.add(*fleet.strip().rsplit(' ', 1))
         except Exception, error:
+            logger.error("ERROR: Couldn't update fleet states")
             logger.error(error)
 
     def get_planets(self, full=False):
@@ -76,11 +80,9 @@ class Ogame(selenium):
         self.planets, xpath = {}, "//div[@id='planetList']"
         for position, planet in enumerate(self.__split_text(xpath)):
             name, coords = re.split('\[?\]?', planet.split('\n')[0])[:2]
-            self.planets[position + 1] = planet = {'name': name.strip()}
-            planet['coords'] = [int(coord) for coord in coords.split(':')]
-            planet['position'] = position + 1
-            logger.debug('Got planet %r on coordinate %r'
-                    % (planet['name'], planet['coords']))
+            planet = planets.Planet(name.strip(), coords, position + 1)
+            self.planets[planet.position] = planet
+            logger.debug('Got planet %r' % planet)
 
             if not full:
                 continue
@@ -88,11 +90,10 @@ class Ogame(selenium):
             self.go_to(planet, 'Flotte')
 
     def go_to(self, planet, page):
-        logger.info('Going to page %r on planet %r' % (page, planet['name']))
-        if self.current_position != planet['position']:
-            self.click("//div[@id='planetList']/div[%d]/a"
-                    % (planet['position']))
-            self.current_position = planet['position']
+        logger.info('Going to page %r on %r' % (page, planet))
+        if self.current_position != planet.position:
+            self.click("//div[@id='planetList']/div[%d]/a" % (planet.position))
+            self.current_position = planet.position
             self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
         if self.current_page != page:
@@ -138,7 +139,7 @@ class Ogame(selenium):
         dst = dst if dst is not None else self.mother
         logger.info('launching rapatriation to %r' % dst)
         for src in self.planets.values():
-            if dst != src:
+            if dst != src.coords:
                 try:
                     self.send_ressources(src, dst)
                 except Exception:

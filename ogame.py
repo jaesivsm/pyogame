@@ -6,7 +6,6 @@ Outil en ligne de commande pour inscrire des actions
 """
 import sys
 import json
-import lib_ogame
 
 from pyogame import interface, utils
 
