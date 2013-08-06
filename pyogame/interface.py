@@ -69,9 +69,7 @@ class Ogame(selenium):
             logger.error(error)
 
     def update_planet_fleet(self, planet=None):
-        logger.debug(planet)
         planet = planet if planet is not None else self.current_planet
-        logger.debug(planet)
         if self.current_page != 'Flotte':
             self.go_to(planet, 'Flotte')
         logger.info('updating fleet states on %r' % planet)
@@ -80,17 +78,24 @@ class Ogame(selenium):
             for fleet_type in ('military', 'civil'):
                 for fleet in self.__split_text("//ul[@id='%s']" % fleet_type):
                     planet.fleet.add(*fleet.strip().rsplit(' ', 1))
+            logger.debug('Found %r' % planet.fleet)
         except Exception, error:
-            logger.error("ERROR: Couldn't update fleet states")
-            logger.error(error)
+            if str(error) != "ERROR: Element //ul[@id='military'] not found":
+                logger.error("ERROR: Couldn't update fleet states")
+                raise error
+            logger.debug('No fleet on %r' % planet)
 
-    def get_planets(self, full=True):
+    def get_planets(self, full=False):
         logger.info('Getting list of colonized planets')
         self.planets, xpath = {}, "//div[@id='planetList']"
         logger.debug(self.__split_text(xpath))
         for position, planet in enumerate(self.__split_text(xpath)):
             name, coords = re.split('\[?\]?', planet.split('\n')[0])[:2]
             planet = planets.Planet(name.strip(), coords, position + 1)
+            if planet.coords == self.mother:
+                planet.is_mother = True
+                self.mother = planet
+                logger.warning('Mother is now %r' % planet)
             self.planets[planet.position] = planet
             logger.debug('Got planet %r' % planet)
 
@@ -129,9 +134,9 @@ class Ogame(selenium):
         self.click("css=#continue > span")
         self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
-        self.type("id=galaxy", dst[0])
-        self.type("id=system", dst[1])
-        self.type("id=position", dst[2])
+        self.type("id=galaxy", dst.coords[0])
+        self.type("id=system", dst.coords[1])
+        self.type("id=position", dst.coords[2])
         self.click("id=pbutton")
         self.click("css=#continue > span")
         self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
@@ -149,7 +154,7 @@ class Ogame(selenium):
         dst = dst if dst is not None else self.mother
         logger.info('launching rapatriation to %r' % dst)
         for src in self.planets.values():
-            if dst != src.coords:
+            if dst != src:
                 try:
                     self.send_ressources(src, dst)
                 except Exception:

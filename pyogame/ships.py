@@ -1,3 +1,7 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 class Ships(object):
     capacity = 0
 
@@ -9,8 +13,9 @@ class Ships(object):
         return self.quantity * self.capacity
 
     def __repr__(self):
-        if self.__doc__:
-            return "%d %s" % (self.quantity, self.name)
+        if self.name:
+            return r"%d %s" % (self.quantity, self.name)
+        return "Ships"
 
 
 class PTs(Ships):
@@ -70,5 +75,8 @@ class Fleet(object):
                 if total_capcity > quantity:
                     return ships
 
-    def repr(self):
-        return ','.join([repr(ship) for ship in self.ships])
+    def __repr__(self):
+        return repr(','.join(
+                [repr(ships) for ships in self.ships
+                    if ships.quantity != 0 and ships.name is not None]
+            ))

@@ -21,5 +21,5 @@ if __name__ == "__main__":
 
     session = interface.Ogame(conf[user]['mother'], conf[user]['planets'])
     session.login(user, conf[user]['password'])
-    session.rapatriate(conf[user]['mother'])
+    session.rapatriate()
 # vim: set et sts=4 sw=4 tw=120:

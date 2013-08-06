@@ -10,3 +10,8 @@ class Planet(object):
 
     def __repr__(self):
         return r"%s %s" % (self.name, self.coords)
+
+    def __eq__(self, other):
+        if isinstance(other, Planet) and other.coords == self.coords:
+                return True
+        return False
