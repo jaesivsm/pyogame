@@ -14,7 +14,7 @@ class Ogame(selenium):
     def __init__(self, mother=None, planets=[]):
         selenium.__init__(self,
                 "localhost", 4444, "*chrome", "http://ogame.fr/")
-        self.current_position = None
+        self.current_planet = None
         self.current_page = None
         self.mother, self.planets = mother, planets
         self.start()
@@ -37,7 +37,8 @@ class Ogame(selenium):
     def __split_text(self, xpath, split_on='\n'):
         return self.get_text(xpath).split(split_on)
 
-    def update_planet_resources(self, planet):
+    def update_planet_resources(self, planet=None):
+        planet = planet if planet is not None else self.current_planet
         logger.info('updating ressources on planet %r' % planet)
         planet.resources = {}
         try:
@@ -49,7 +50,10 @@ class Ogame(selenium):
             logger.error("ERROR: Couldn't update ressources")
             logger.error(error)
 
-    def update_planet_buildings(self, planet):
+    def update_planet_buildings(self, planet=None):
+        planet = planet if planet is not None else self.current_planet
+        if self.current_page != 'Ressources':
+            self.go_to(planet, 'Ressources')
         logger.info('updating buildings states for %r' % planet)
         planet.constructions = constructions = {}
         try:
@@ -64,7 +68,12 @@ class Ogame(selenium):
             logger.error("ERROR: Couldn't update building states")
             logger.error(error)
 
-    def update_planet_fleet(self, planet):
+    def update_planet_fleet(self, planet=None):
+        logger.debug(planet)
+        planet = planet if planet is not None else self.current_planet
+        logger.debug(planet)
+        if self.current_page != 'Flotte':
+            self.go_to(planet, 'Flotte')
         logger.info('updating fleet states on %r' % planet)
         planet.fleet = ships.Fleet()
         try:
@@ -75,9 +84,10 @@ class Ogame(selenium):
             logger.error("ERROR: Couldn't update fleet states")
             logger.error(error)
 
-    def get_planets(self, full=False):
+    def get_planets(self, full=True):
         logger.info('Getting list of colonized planets')
         self.planets, xpath = {}, "//div[@id='planetList']"
+        logger.debug(self.__split_text(xpath))
         for position, planet in enumerate(self.__split_text(xpath)):
             name, coords = re.split('\[?\]?', planet.split('\n')[0])[:2]
             planet = planets.Planet(name.strip(), coords, position + 1)
@@ -86,17 +96,17 @@ class Ogame(selenium):
 
             if not full:
                 continue
-            self.go_to(planet, 'Ressources')
-            self.go_to(planet, 'Flotte')
+            self.go_to(planet)
+            self.update_planet_fleet()
 
-    def go_to(self, planet, page):
+    def go_to(self, planet=None, page=None):
         logger.info('Going to page %r on %r' % (page, planet))
-        if self.current_position != planet.position:
+        if planet is not None and self.current_planet is not planet:
             self.click("//div[@id='planetList']/div[%d]/a" % (planet.position))
-            self.current_position = planet.position
+            self.current_planet = planet
             self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
-        if self.current_page != page:
+        if page is not None and self.current_page != page:
             self.click("link=%s" % page)
             self.current_page = page
             self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
