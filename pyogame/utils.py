@@ -1,5 +1,6 @@
 import logging
 
+
 def set_logger(logfile=False):
     "Will set a global logging configuration for muleo."
     logger = logging.getLogger('pyogame')

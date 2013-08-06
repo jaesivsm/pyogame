@@ -4,10 +4,12 @@ import re
 import logging
 from selenium import selenium
 
-logger = logging.getLogger(__name__)
 from pyogame import planets, ships
+from pyogame.const import PAGES
 
+logger = logging.getLogger(__name__)
 DEFAULT_WAIT_TIME = 40000
+
 
 class Ogame(selenium):
 
@@ -52,8 +54,8 @@ class Ogame(selenium):
 
     def update_planet_buildings(self, planet=None):
         planet = planet if planet is not None else self.current_planet
-        if self.current_page != 'Ressources':
-            self.go_to(planet, 'Ressources')
+        if self.current_page != PAGES['resources']:
+            self.go_to(planet, PAGES['resources'])
         logger.info('updating buildings states for %r' % planet)
         planet.constructions = constructions = {}
         try:
@@ -70,8 +72,8 @@ class Ogame(selenium):
 
     def update_planet_fleet(self, planet=None):
         planet = planet if planet is not None else self.current_planet
-        if self.current_page != 'Flotte':
-            self.go_to(planet, 'Flotte')
+        if self.current_page != PAGES['fleet']:
+            self.go_to(planet, PAGES['fleet'])
         logger.info('updating fleet states on %r' % planet)
         planet.fleet = ships.Fleet()
         try:
@@ -117,9 +119,9 @@ class Ogame(selenium):
             self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
         self.update_planet_resources(planet)
-        if page == 'Ressources':
+        if page == PAGES['resources']:
             self.update_planet_resources(planet)
-        elif page == 'Flotte':
+        elif page == PAGES['fleet']:
             self.update_planet_fleet(planet)
 
     def send_ressources(self, src, dst, content={}):
@@ -129,7 +131,7 @@ class Ogame(selenium):
         logger.info('sending all possible ressources from %r to %r'
                 % (src, dst))
 
-        self.go_to(src, 'Flotte')
+        self.go_to(src, PAGES['fleet'])
         self.click("//ul[@id='civil']/li[2]/div/a")
         self.click("css=#continue > span")
         self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
