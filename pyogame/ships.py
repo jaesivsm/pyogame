@@ -18,6 +18,9 @@ class Ships(object):
             return r"%d %s" % (self.quantity, self.name)
         return "Ships"
 
+    def __len__(self):
+        return self.quantity
+
 
 class PTs(Ships):
     u'Petit transporteur'
@@ -56,27 +59,27 @@ class Fleet(object):
         self.ships.append(SHIP_NAMES[ships_name](quantity))
 
     def transport(self, quantity):
-        total_capcity = 0
+        total_capacity = 0
         for ship in self.ships:
             if not ship.is_transporter:
                 continue
             capacity = ship.get_capacity()
-            total_capcity += capacity
+            total_capacity += capacity
             if capacity > quantity:
                 ship_count = quantity / ship.capacity
                 ship_count += 1 if quantity % ship.capacity else 0
                 return [(ship.ogame_id, ship_count)]
-        if total_capcity > quantity:
-            ships, total_capcity = [], 0
+        if total_capacity > quantity:
+            ships, total_capacity = [], 0
             for ship in self.ships:
                 if not ship.is_transporter:
                     continue
-                total_capcity += ship.get_capacity()
+                total_capacity += ship.get_capacity()
                 ships.append((ships.ogame_id, ship.quantity))
-                if total_capcity > quantity:
+                if total_capacity > quantity:
                     return ships
 
-    def get_ships_total(self):
+    def __len__(self):
         return sum([ships.quantity for ships in self.ships])
 
     def __repr__(self):

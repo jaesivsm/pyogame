@@ -82,15 +82,15 @@ class Ogame(selenium):
                     planet.fleet.add(*fleet.strip().rsplit(' ', 1))
             logger.debug('Found %r' % planet.fleet)
         except Exception, error:
-            if str(error) != "ERROR: Element //ul[@id='military'] not found":
-                logger.error("ERROR: Couldn't update fleet states")
-                raise error
-            logger.debug('No fleet on %r' % planet)
+            if "//ul[@id='military'] not found" in str(error):
+                logger.debug('No fleet on %r' % planet)
+                return
+            logger.error("ERROR: Couldn't update fleet states")
+            raise error
 
     def get_planets(self, full=False):
         logger.info('Getting list of colonized planets')
         self.planets, xpath = {}, "//div[@id='planetList']"
-        logger.debug(self.__split_text(xpath))
         for position, planet in enumerate(self.__split_text(xpath)):
             name, coords = re.split('\[?\]?', planet.split('\n')[0])[:2]
             planet = planets.Planet(name.strip(), coords, position + 1)
@@ -99,7 +99,7 @@ class Ogame(selenium):
                 self.mother = planet
                 logger.warning('Mother is now %r' % planet)
             self.planets[planet.position] = planet
-            logger.debug('Got planet %r' % planet)
+            logger.info('Got planet %r' % planet)
 
             if not full:
                 continue
@@ -132,6 +132,9 @@ class Ogame(selenium):
                 % (src, dst))
 
         self.go_to(src, PAGES['fleet'])
+        if not src.fleet:
+            logger.warn("No ships on %r, can't move ressources" % src)
+            return
         self.click("//ul[@id='civil']/li[2]/div/a")
         self.click("css=#continue > span")
         self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
@@ -156,14 +159,14 @@ class Ogame(selenium):
         dst = dst if dst is not None else self.mother
         logger.info('launching rapatriation to %r' % dst)
         for src in self.planets.values():
-            if dst is src:  # Can't rapatriate from mother to mother
-                continue
-            if src.fleet.get_ships_total() == 0:
-                logger.info("No ships on %r, won't rapatriate" % src)
+            if dst is src:
+                logger.info("Can't rapatriate from mother to mother")
                 continue
             try:
                 self.send_ressources(src, dst)
-            except Exception:
+            except Exception, error:
+                logger.error('An error occured during rapatriation:')
+                logger.exception(error)
                 pass
 
 # vim: set et sts=4 sw=4 tw=120:
