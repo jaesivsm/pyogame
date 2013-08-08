@@ -13,28 +13,35 @@ DEFAULT_WAIT_TIME = 40000
 
 class Ogame(selenium):
 
-    def __init__(self, mother=None, planets=[]):
+    def __init__(self, conf_dict={}):
+        needed = ['user', 'password', 'univers']
+        for key in needed:
+            assert key in conf_dict, "configuration dictionnary must at " \
+                    "least own the following keys: " + ", ".join(needed)
+            setattr(self, key, conf_dict[key])
+        self.mother = conf_dict['mother'] if 'mother' in conf_dict else None
+        self.planets = conf_dict['planets'] if 'planets' in conf_dict else []
+
         selenium.__init__(self,
                 "localhost", 4444, "*chrome", "http://ogame.fr/")
         self.current_planet = None
         self.current_page = None
-        self.mother, self.planets = mother, planets
         self.start()
+
+        logger.info('Logging in with identity %r' % self.user)
+        self.open("http://ogame.fr/")
+        self.click("id=loginBtn")
+        self.select("id=serverLogin", "label=%s" % self.univers)
+        self.type("id=usernameLogin", self.user)
+        self.type("id=passwordLogin", self.password)
+        self.click("id=loginSubmit")
+        self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
+
+        if not self.planets:
+            self.get_planets()
 
     def __del__(self):
         self.stop()
-
-    def login(self, login, passwd):
-        logger.info('Logging in with identity %r' % login)
-        self.open("http://ogame.fr/")
-        self.click("id=loginBtn")
-        self.select("id=serverLogin", "label=Pegasus")
-        self.type("id=usernameLogin", login)
-        self.type("id=passwordLogin", passwd)
-        self.click("id=loginSubmit")
-        self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
-        if not self.planets:
-            self.get_planets()
 
     def __split_text(self, xpath, split_on='\n'):
         return self.get_text(xpath).split(split_on)
