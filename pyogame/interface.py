@@ -75,7 +75,7 @@ class Ogame(selenium):
         if self.current_page != PAGES['fleet']:
             self.go_to(planet, PAGES['fleet'])
         logger.info('updating fleet states on %r' % planet)
-        planet.fleet = ships.Fleet()
+        planet.fleet.ships = []
         try:
             for fleet_type in ('military', 'civil'):
                 for fleet in self.__split_text("//ul[@id='%s']" % fleet_type):
@@ -156,10 +156,14 @@ class Ogame(selenium):
         dst = dst if dst is not None else self.mother
         logger.info('launching rapatriation to %r' % dst)
         for src in self.planets.values():
-            if dst != src:
-                try:
-                    self.send_ressources(src, dst)
-                except Exception:
-                    pass
+            if dst is src:  # Can't rapatriate from mother to mother
+                continue
+            if src.fleet.get_ships_total() == 0:
+                logger.info("No ships on %r, won't rapatriate" % src)
+                continue
+            try:
+                self.send_ressources(src, dst)
+            except Exception:
+                pass
 
 # vim: set et sts=4 sw=4 tw=120:

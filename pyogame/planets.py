@@ -1,3 +1,10 @@
+import logging
+
+from pyogame.ships import Fleet
+
+logger = logging.getLogger(__name__)
+
+
 class Planet(object):
     is_mother = False
 
@@ -7,6 +14,7 @@ class Planet(object):
         if type(coords) is not list:
             self.coords = [int(coord) for coord in coords.split(':')]
         self.position = position
+        self.fleet = Fleet()
 
     def __repr__(self):
         return r"%s %s" % (self.name, self.coords)

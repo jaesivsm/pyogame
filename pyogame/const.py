@@ -14,5 +14,3 @@ class Collection(object):
 
 
 PAGES = Collection(__pages)
-
-

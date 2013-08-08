@@ -76,8 +76,13 @@ class Fleet(object):
                 if total_capcity > quantity:
                     return ships
 
+    def get_ships_total(self):
+        return sum([ships.quantity for ships in self.ships])
+
     def __repr__(self):
         return repr(','.join(
                 [repr(ships) for ships in self.ships
                     if ships.quantity != 0 and ships.name is not None]
             ))
+
+
