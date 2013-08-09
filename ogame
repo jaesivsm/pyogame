@@ -1,5 +1,0 @@
-#!/bin/bash
-
-xpra start :99
-python ogame.py $@
-xpra stop :99

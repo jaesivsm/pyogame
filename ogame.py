@@ -15,19 +15,17 @@ CONF_PATH = 'conf.json'
 
 
 if __name__ == "__main__":
-    utils.set_logger()
-
+    user, logfile, loglevel = utils.parse_args()
+    utils.set_logger(logfile, loglevel)
 
     with open(CONF_PATH) as conf_file:
         conf = json.load(conf_file)
 
-    if len(sys.argv) < 2:
-        logger.error('You must precise an account name')
+    if user not in conf:
+        logger.error('Account %r unknown' % user)
         exit(1)
-    elif sys.argv[1] not in conf:
-        logger.error('Account %r unknown' % sys.argv[1])
-        exit(2)
     else:
-        session = interface.Ogame(conf[sys.argv[1]])
+        session = interface.Ogame(conf[user])
         session.rapatriate()
+
 # vim: set et sts=4 sw=4 tw=120:
