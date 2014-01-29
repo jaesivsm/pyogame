@@ -1,12 +1,13 @@
 import logging
 
-from pyogame.ships import Fleet
+from pyogame.fleet import Fleet
 
 logger = logging.getLogger(__name__)
+__all__ = ('Planet', 'Colonies')
 
 
 class Planet(object):
-    is_mother = False
+    is_capital = False
 
     def __init__(self, name, coords, position):
         self.name = name
@@ -15,11 +16,66 @@ class Planet(object):
             self.coords = [int(coord) for coord in coords.split(':')]
         self.position = position
         self.fleet = Fleet()
+        self.ressources = {}
+        self.buildings = {}
+        logger.info('Got planet %r' % self)
 
     def __repr__(self):
-        return r"%s %s" % (self.name, self.coords)
+        return r"<%s %s>" % (self.name, self.coords)
 
     def __eq__(self, other):
         if isinstance(other, Planet) and other.coords == self.coords:
-                return True
+            return True
         return False
+
+
+class ClassProperty(property):
+
+    def __get__(self, cls, owner):
+        return self.fget.__get__(None, owner)()
+
+
+class Empire(object):
+    planets = {}
+    capital = None
+
+    class __metaclass__(type):  # Hack so the class is iterable
+        def __iter__(self):
+            return self.__iter__()
+
+    @classmethod
+    def add(cls, planet):
+        cls.planets[planet.position] = planet
+        if planet.is_capital:
+            logger.warning('Capital is now %r' % planet)
+            cls.capital = planet
+
+    @classmethod
+    def __iter__(cls):
+        return iter(cls.planets.values())
+
+    @ClassProperty
+    @classmethod
+    def colonies(cls):
+        for planet in cls:
+            if not planet.is_capital:
+                yield planet
+
+    @ClassProperty
+    @classmethod
+    def fleet(cls):
+        fleet = Fleet()
+        for planet in cls:
+            for ships in planet.fleet:
+                fleet.add(ships=ships)
+        return fleet
+
+    @ClassProperty
+    @classmethod
+    def ressources(cls):
+        ressources = {'crystal': 0, 'metal': 0, 'deuterium': 0}
+        for planet in cls:
+            for key in ressources:
+                ressources[key] += planet.ressources[key]
+            ressources['energy'] = planet.ressources['energy']
+        return ressources

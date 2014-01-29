@@ -1,1 +1,1 @@
-{"username": {"password": "password", "planets": [[5, 57, 5], [5, 57, 6], [5, 57, 7], [5, 58, 7], [5, 58, 10], [5, 58, 11]], "mother": [5, 57, 7]}}
+{"account_key": {"user": "username", "password": "password", "univers": "univers nam", "capital": [5, 57, 7]}}

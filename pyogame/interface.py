@@ -1,26 +1,24 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 import re
 import logging
 from selenium import selenium
 
-from pyogame import planets, ships
+from pyogame.planets import Empire, Planet
 from pyogame.const import PAGES
 
 logger = logging.getLogger(__name__)
 DEFAULT_WAIT_TIME = 40000
 
 
-class Ogame(selenium):
+class Interface(selenium):
 
     def __init__(self, conf_dict={}):
         needed = ['user', 'password', 'univers']
+        self._conf_dict =  conf_dict
         for key in needed:
             assert key in conf_dict, "configuration dictionnary must at " \
                     "least own the following keys: " + ", ".join(needed)
             setattr(self, key, conf_dict[key])
-        self.mother = conf_dict['mother'] if 'mother' in conf_dict else None
-        self.planets = conf_dict['planets'] if 'planets' in conf_dict else []
 
         selenium.__init__(self,
                 "localhost", 4444, "*chrome", "http://ogame.fr/")
@@ -37,8 +35,7 @@ class Ogame(selenium):
         self.click("id=loginSubmit")
         self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
-        if not self.planets:
-            self.get_planets()
+        self.discover()
 
     def __del__(self):
         self.stop()
@@ -49,64 +46,61 @@ class Ogame(selenium):
     def update_planet_resources(self, planet=None):
         planet = planet if planet is not None else self.current_planet
         logger.info('updating ressources on planet %r' % planet)
-        planet.resources = {}
         try:
             for res_type in ['metal_box', 'crystal_box',
                     'deuterium_box', 'energy_box']:
                 res = self.__split_text("//li[@id='%s']" % res_type, '.')
-                planet.resources[res_type[:-4]] = int(''.join(res))
-        except Exception, error:
-            logger.error("ERROR: Couldn't update ressources")
-            logger.error(error)
+                planet.ressources[res_type[:-4]] = int(''.join(res))
+        except Exception:
+            logger.exception("ERROR: Couldn't update ressources")
 
     def update_planet_buildings(self, planet=None):
         planet = planet if planet is not None else self.current_planet
         if self.current_page != PAGES['resources']:
             self.go_to(planet, PAGES['resources'])
         logger.info('updating buildings states for %r' % planet)
-        planet.constructions = constructions = {}
+        planet.constructs = {}
         try:
             for ctype in ('building', 'storage'):
                 for const in self.__split_text("//ul[@id='%s']" % ctype):
                     if not const.strip():
                         continue
-                    constructions[ctype] = {}
+                    planet.constructs[ctype] = {}
                     name, level = const.strip().rsplit(' ', 1)
-                    constructions[ctype][name] = int(''.join(level.split('.')))
-        except Exception, error:
-            logger.error("ERROR: Couldn't update building states")
-            logger.error(error)
+                    planet.constructs[ctype][name] \
+                            = int(''.join(level.split('.')))
+        except Exception:
+            logger.exception("ERROR: Couldn't update building states")
 
     def update_planet_fleet(self, planet=None):
         planet = planet if planet is not None else self.current_planet
         if self.current_page != PAGES['fleet']:
             self.go_to(planet, PAGES['fleet'])
         logger.info('updating fleet states on %r' % planet)
-        planet.fleet.ships = []
-        try:
-            for fleet_type in ('military', 'civil'):
+        for fleet_type in ('military', 'civil'):
+            try:
                 for fleet in self.__split_text("//ul[@id='%s']" % fleet_type):
-                    planet.fleet.add(*fleet.strip().rsplit(' ', 1))
-            logger.debug('Found %r' % planet.fleet)
-        except Exception, error:
-            if "//ul[@id='military'] not found" in str(error):
-                logger.debug('No fleet on %r' % planet)
-                return
-            logger.error("ERROR: Couldn't update fleet states")
-            raise error
+                    name, quantity = fleet.strip().rsplit(' ', 1)
+                    planet.fleet.add(name.encode('utf8'), int(quantity))
+            except Exception, error:
+                if "//ul[@id='" in str(error) and "not found" in str(error):
+                    logger.debug('No %s fleet on %r' % (fleet_type, planet))
+                    continue
+                logger.error("ERROR: Couldn't update fleet states")
+                raise error
+        logger.debug('%s got fleet %s' % (planet, planet.fleet))
 
-    def get_planets(self, full=False):
+    def discover(self, full=False):
         logger.info('Getting list of colonized planets')
-        self.planets, xpath = {}, "//div[@id='planetList']"
+        xpath = "//div[@id='planetList']"
+        capital = self._conf_dict['capital'] \
+                if 'capital' in self._conf_dict else None
         for position, planet in enumerate(self.__split_text(xpath)):
             name, coords = re.split('\[?\]?', planet.split('\n')[0])[:2]
-            planet = planets.Planet(name.strip(), coords, position + 1)
-            if planet.coords == self.mother:
-                planet.is_mother = True
-                self.mother = planet
-                logger.warning('Mother is now %r' % planet)
-            self.planets[planet.position] = planet
-            logger.info('Got planet %r' % planet)
+            planet = Planet(name.strip(), coords, position + 1)
+            if capital and planet.coords == capital:
+                planet.is_capital = True
+            Empire.add(planet)
 
             if not full:
                 continue
@@ -159,21 +153,5 @@ class Ogame(selenium):
         self.click("css=#start > span")
         self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
         self.update_planet_fleet(src)
-
-    def rapatriate(self, dst=None):
-        if not self.planets:
-            self.get_planets()
-        dst = dst if dst is not None else self.mother
-        logger.info('launching rapatriation to %r' % dst)
-        for src in self.planets.values():
-            if dst is src:
-                logger.info("Can't rapatriate from mother to mother")
-                continue
-            try:
-                self.send_ressources(src, dst)
-            except Exception, error:
-                logger.error('An error occured during rapatriation:')
-                logger.exception(error)
-                pass
 
 # vim: set et sts=4 sw=4 tw=120:

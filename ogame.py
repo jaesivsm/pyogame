@@ -4,11 +4,11 @@
 Outil en ligne de commande pour inscrire des actions
 à exécuter ou pour les exécuter directement.
 """
-import sys
 import json
 import logging
 
-from pyogame import interface, utils
+from pyogame import utils, scenarii
+from pyogame.interface import Interface
 
 logger = logging.getLogger('pyogame')
 CONF_PATH = 'conf.json'
@@ -25,7 +25,7 @@ if __name__ == "__main__":
         logger.error('Account %r unknown' % user)
         exit(1)
     else:
-        session = interface.Ogame(conf[user])
-        session.rapatriate()
+        session = Interface(conf[user])
+        scenarii.rapatriate(session)
 
 # vim: set et sts=4 sw=4 tw=120:
