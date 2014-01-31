@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 
-from pyogame.planets import Empire
+from pyogame.empire import Empire
 
 logger = logging.getLogger(__name__)
 

@@ -3,7 +3,8 @@ import re
 import logging
 from selenium import selenium
 
-from pyogame.planets import Empire, Planet
+from pyogame.empire import Empire
+from pyogame.planet import Planet
 from pyogame.const import PAGES, RES_TYPES
 
 logger = logging.getLogger(__name__)
