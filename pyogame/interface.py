@@ -4,7 +4,7 @@ import logging
 from selenium import selenium
 
 from pyogame.planets import Empire, Planet
-from pyogame.const import PAGES
+from pyogame.const import PAGES, RES_TYPES
 
 logger = logging.getLogger(__name__)
 DEFAULT_WAIT_TIME = 40000
@@ -45,14 +45,14 @@ class Interface(selenium):
 
     def update_planet_resources(self, planet=None):
         planet = planet if planet is not None else self.current_planet
-        logger.info('updating ressources on planet %r' % planet)
+        logger.info('updating resources on planet %r' % planet)
         try:
             for res_type in ['metal_box', 'crystal_box',
                     'deuterium_box', 'energy_box']:
                 res = self.__split_text("//li[@id='%s']" % res_type, '.')
-                planet.ressources[res_type[:-4]] = int(''.join(res))
+                planet.resources[res_type[:-4]] = int(''.join(res))
         except Exception:
-            logger.exception("ERROR: Couldn't update ressources")
+            logger.exception("ERROR: Couldn't update resources")
 
     def update_planet_buildings(self, planet=None):
         planet = planet if planet is not None else self.current_planet
@@ -108,35 +108,46 @@ class Interface(selenium):
             self.update_planet_fleet()
 
     def go_to(self, planet=None, page=None):
-        logger.info('Going to page %r on %r' % (page, planet))
+        logger.debug('Going to page %r on %r' % (page, planet))
         if planet is not None and self.current_planet is not planet:
+            logger.info('Going to planet %r' % planet)
             self.click("//div[@id='planetList']/div[%d]/a" % (planet.position))
             self.current_planet = planet
             self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
         if page is not None and self.current_page != page:
+            logger.info('Going to page %r' % page)
             self.click("link=%s" % page)
             self.current_page = page
             self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
         self.update_planet_resources(planet)
-        if page == PAGES['resources']:
+        if self.current_page == PAGES['resources']:
             self.update_planet_resources(planet)
-        elif page == PAGES['fleet']:
+        elif self.current_page == PAGES['fleet']:
             self.update_planet_fleet(planet)
 
-    def send_ressources(self, src, dst, content={}):
-        #metal = content.get('metal', 'all')
-        #cristal = content.get('cristal', 'all')
-        #deut = content.get('deut', 'all')
-        logger.info('sending all possible ressources from %r to %r'
-                % (src, dst))
-
+    def send_resources(self, src, dst, all_ships=False, **kwargs):
+        resources, all_resources = {}, False
         self.go_to(src, PAGES['fleet'])
-        if not src.fleet:
-            logger.warn("No ships on %r, can't move ressources" % src)
+        for res_type in RES_TYPES:
+            if res_type in kwargs:
+                resources[res_type] = kwargs[res_type]
+        all_resources = not resources
+
+        if not src.fleet.transports:
+            logger.warn("No ships on %r, can't move resources" % src)
             return
-        self.click("//ul[@id='civil']/li[2]/div/a")
+
+        if all_ships:
+            for ships in src.fleet.transports:
+                self.click(ships.xpath)
+        else:
+            sum_resources = sum(
+                    [res for res in (resources or src.resources).values()])
+            for ships in src.fleet.transports.for_moving(sum_resources):
+                self.type('id=%s' % ships.ship_id, ships.quantity)
+
         self.click("css=#continue > span")
         self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
@@ -148,8 +159,12 @@ class Interface(selenium):
         self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
         self.click("css=#missionButton3")
-        #if metal == 'all' and cristal == 'all' and deut == 'all':
-        self.click("css=#allresources > img")
+        if all_resources:
+            self.click("css=#allresources > img")
+        else:
+            for res_type, quantity in resources.items():
+                self.type('id=%s' % res_type, quantity)
+
         self.click("css=#start > span")
         self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
         self.update_planet_fleet(src)

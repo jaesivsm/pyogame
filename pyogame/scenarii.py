@@ -15,6 +15,6 @@ def rapatriate(interface, destination=None):
         if destination is colony:
             continue
         try:
-            interface.send_ressources(colony, destination)
+            interface.send_resources(colony, destination, all_ships=True)
         except Exception:
             logger.exception('An error occured during rapatriation:')

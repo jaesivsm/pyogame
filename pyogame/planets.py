@@ -16,7 +16,7 @@ class Planet(object):
             self.coords = [int(coord) for coord in coords.split(':')]
         self.position = position
         self.fleet = Fleet()
-        self.ressources = {}
+        self.resources = {}
         self.buildings = {}
         logger.info('Got planet %r' % self)
 
@@ -72,10 +72,10 @@ class Empire(object):
 
     @ClassProperty
     @classmethod
-    def ressources(cls):
-        ressources = {'crystal': 0, 'metal': 0, 'deuterium': 0}
+    def resources(cls):
+        resources = {'crystal': 0, 'metal': 0, 'deuterium': 0}
         for planet in cls:
-            for key in ressources:
-                ressources[key] += planet.ressources[key]
-            ressources['energy'] = planet.ressources['energy']
-        return ressources
+            for key in resources:
+                resources[key] += planet.resources[key]
+            resources['energy'] = planet.resources['energy']
+        return resources

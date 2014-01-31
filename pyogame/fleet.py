@@ -6,6 +6,8 @@ logger = logging.getLogger(__name__)
 class Ships(object):
     single_ship_capacity = 0
     are_transport = False
+    xpath = None
+    ship_id = None
 
     def __init__(self, name=None, quantity=0):
         self.name = name
@@ -28,30 +30,23 @@ class Ships(object):
 
 
 class PTs(Ships):
-    u'Petit transporteur'
+    'Petit transporteur'
     single_ship_capacity = 5000
     are_transport = True
+    xpath = "//ul[@id='civil']/li[1]/div/a"
+    ship_id = "ship_202"
 
 
 class GTs(Ships):
-    u'Grand transporteur'
+    'Grand transporteur'
     single_ship_capacity = 25000
     are_transport = True
+    xpath = "//ul[@id='civil']/li[2]/div/a"
+    ship_id = "ship_203"
 
 
-SHIP_TYPES = {'Grand transporteur': GTs,
-        'Petit transporteur': PTs,
-        'Recycleur': Ships,
-        'Sonde d`espionnage': Ships,
-        'Vaisseau de colonisation': Ships,
-        'Bombardier': Ships,
-        'Chasseur lourd': Ships,
-        'Chasseur l\xc3\xa9ger': Ships,
-        'Croiseur': Ships,
-        'Destructeur': Ships,
-        'Traqueur': Ships,
-        'Vaisseau de bataille': Ships,
-        '\xc3\x89toile de la mort': Ships,
+SHIPS_TYPES = {'grand transporteur': GTs,
+        'petit transporteur': PTs,
 }
 
 
@@ -77,14 +72,28 @@ class Fleet(object):
 
     def add(self, ships_name='', quantity=0, ships=None):
         if ships_name and quantity:
-            ships = SHIP_TYPES.get(ships_name, Ships)(ships_name, quantity)
-        elif isinstance(ships, Ships):
-            ships = ships.copy()  # avoid stacking
+            ships_type = SHIPS_TYPES.get(ships_name.lower(), Ships)
+            ships = ships_type(ships_name, quantity)
         if isinstance(ships, Ships) and ships.quantity:
-            if not ships.name in self._ships:
-                self._ships[ships.name] = ships
+            if not ships.name.lower() in self._ships:
+                self._ships[ships.name.lower()] = ships.copy()
             else:
-                self._ships[ships.name].quantity += ships.quantity
+                self._ships[ships.name.lower()].quantity += ships.quantity
+
+    def for_moving(self, quantity):
+        fleet, tmp_quantity = Fleet(), quantity
+        assert self.capacity >= quantity, 'Too many resources (%r) " \
+                "for fleet %r' % (quantity, self)
+        cmp_func = lambda x,y: cmp(x.capacity, y.capacity)
+        for ships in sorted(self, cmp=cmp_func, reverse=True):
+            if ships.capacity >= tmp_quantity:
+                nb_ships = tmp_quantity / ships.single_ship_capacity
+                if tmp_quantity % ships.single_ship_capacity:
+                    nb_ships += 1
+                fleet.add(ships.name, nb_ships)
+                return fleet
+            fleet.add(ships=ships)
+            tmp_quantity -= ships.capacity
 
     def __len__(self):
         return sum([ships.quantity for ships in self])
