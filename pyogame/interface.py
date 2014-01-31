@@ -47,9 +47,8 @@ class Interface(selenium):
         planet = planet if planet is not None else self.current_planet
         logger.info('updating resources on planet %r' % planet)
         try:
-            for res_type in ['metal_box', 'crystal_box',
-                    'deuterium_box', 'energy_box']:
-                res = self.__split_text("//li[@id='%s']" % res_type, '.')
+            for res_type in RES_TYPES:
+                res = self.__split_text("//li[@id='%s_box']" % res_type, '.')
                 planet.resources[res_type[:-4]] = int(''.join(res))
         except Exception:
             logger.exception("ERROR: Couldn't update resources")

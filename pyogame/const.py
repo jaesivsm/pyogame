@@ -2,7 +2,7 @@ __pages = {
         'fleet': {'fr': 'Flotte'},
         'resources': {'fr': 'Ressources'},
 }
-RES_TYPES = ['metal', 'crystal', 'deuterium']
+RES_TYPES = ['deuterium', 'crystal', 'metal']
 
 class Collection(object):
 

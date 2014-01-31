@@ -77,5 +77,4 @@ class Empire(object):
         for planet in cls:
             for key in resources:
                 resources[key] += planet.resources[key]
-            resources['energy'] = planet.resources['energy']
         return resources
