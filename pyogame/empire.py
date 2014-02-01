@@ -1,57 +1,68 @@
 import logging
 
 from pyogame.fleet import Fleet
+from pyogame.const import RES_TYPES
 
 logger = logging.getLogger(__name__)
-__all__ = ('Empire')
 
 
-class ClassProperty(property):
+class PlanetCollection(object):
 
-    def __get__(self, cls, owner):
-        return self.fget.__get__(None, owner)()
+    def __init__(self):
+        self.planets = {}
+        self.capital = None
 
+    def __iter__(self):
+        return iter(self.planets.values())
 
-class Empire(object):
-    planets = {}
-    capital = None
-
-    class __metaclass__(type):  # Hack so the class is iterable
-        def __iter__(self):
-            return self.__iter__()
-
-    @classmethod
-    def add(cls, planet):
-        cls.planets[planet.position] = planet
+    def add(self, planet):
+        self.planets[planet.position] = planet
         if planet.is_capital:
             logger.warning('Capital is now %r' % planet)
-            cls.capital = planet
+            self.capital = planet
 
-    @classmethod
-    def __iter__(cls):
-        return iter(cls.planets.values())
-
-    @ClassProperty
-    @classmethod
-    def colonies(cls):
-        for planet in cls:
+    @property
+    def colonies(self):
+        pl_col = PlanetCollection()
+        for planet in self:
             if not planet.is_capital:
-                yield planet
+                pl_col.add(planet)
+        return pl_col
 
-    @ClassProperty
-    @classmethod
-    def fleet(cls):
+    @property
+    def fleet(self):
         fleet = Fleet()
-        for planet in cls:
+        for planet in self:
             for ships in planet.fleet:
                 fleet.add(ships=ships)
         return fleet
 
-    @ClassProperty
-    @classmethod
-    def resources(cls):
-        resources = {'crystal': 0, 'metal': 0, 'deuterium': 0}
-        for planet in cls:
-            for key in resources:
-                resources[key] += planet.resources[key]
+    @property
+    def resources(self):
+        resources = {}
+        for planet in self:
+            for res_type in RES_TYPES:
+                if not res_type in resources:
+                    resources[res_type] = 0
+                resources[res_type] += planet.resources[res_type]
         return resources
+
+    def cheapest(self, construct_type):
+        "return the planet with the cheapest construction of the given type"
+        cheapest = None
+        for planet in self:
+            construct = getattr(planet, construct_type)
+            if not cheapest:
+                cheapest = planet
+            if construct.level < getattr(cheapest, construct_type).level:
+                cheapest = planet
+        return cheapest
+
+    def __len__(self):
+        return len(self.planets)
+
+    def __repr__(self):
+        return repr(','.join([repr(planet) for planet in self]))
+
+
+empire = PlanetCollection()

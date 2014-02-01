@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 
-from pyogame.empire import Empire
+from pyogame.empire import empire
 
 logger = logging.getLogger(__name__)
 
@@ -9,9 +9,10 @@ logger = logging.getLogger(__name__)
 def rapatriate(interface, destination=None):
     logger.info('launching rapatriation to %r' % destination)
     if not destination:
-        assert Empire.capital
-        destination = Empire.capital
-    for colony in Empire.colonies:
+        assert empire.capital, "Empire has no capital " \
+                "and no destination has been provided"
+        destination = empire.capital
+    for colony in empire.colonies:
         if destination is colony:
             continue
         try:

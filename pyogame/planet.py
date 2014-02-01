@@ -1,6 +1,8 @@
 import logging
 
 from pyogame.fleet import Fleet
+from pyogame.constructions import MetalMine, CrystalMine, \
+        DeuteriumSynthetizer, SolarPlant
 
 logger = logging.getLogger(__name__)
 
@@ -16,8 +18,11 @@ class Planet(object):
         self.position = position
         self.fleet = Fleet()
         self.resources = {}
-        self.buildings = {}
-        logger.info('Got planet %r' % self)
+
+        self.metal_mine = MetalMine()
+        self.crystal_mine = CrystalMine()
+        self.deuterium_synthetize = DeuteriumSynthetizer()
+        self.solar_plant = SolarPlant()
 
     def __repr__(self):
         return r"<%s %s>" % (self.name, self.coords)

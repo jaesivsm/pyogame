@@ -9,6 +9,7 @@ class Fleet(object):
 
     def __init__(self):
         self._ships = {}
+        self.clear = self._ships.clear
 
     def __iter__(self):
         return iter(self._ships.values())

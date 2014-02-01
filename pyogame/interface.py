@@ -3,9 +3,9 @@ import re
 import logging
 from selenium import selenium
 
-from pyogame.empire import Empire
+from pyogame.empire import empire
 from pyogame.planet import Planet
-from pyogame.const import PAGES, RES_TYPES
+from pyogame.const import PAGES, RES_TYPES, BUILDINGS
 
 logger = logging.getLogger(__name__)
 DEFAULT_WAIT_TIME = 40000
@@ -42,7 +42,9 @@ class Interface(selenium):
         self.stop()
 
     def __split_text(self, xpath, split_on='\n'):
-        return self.get_text(xpath).split(split_on)
+        for txt in self.get_text(xpath).split(split_on):
+            if txt.strip():
+                yield txt.strip()
 
     def update_planet_resources(self, planet=None):
         planet = planet if planet is not None else self.current_planet
@@ -50,33 +52,32 @@ class Interface(selenium):
         try:
             for res_type in RES_TYPES:
                 res = self.__split_text("//li[@id='%s_box']" % res_type, '.')
-                planet.resources[res_type[:-4]] = int(''.join(res))
+                planet.resources[res_type] = int(''.join(res))
         except Exception:
             logger.exception("ERROR: Couldn't update resources")
 
     def update_planet_buildings(self, planet=None):
         planet = planet if planet is not None else self.current_planet
         if self.current_page != PAGES['resources']:
-            self.go_to(planet, PAGES['resources'])
+            self.go_to(planet, PAGES['resources'], update=False)
         logger.info('updating buildings states for %r' % planet)
-        planet.constructs = {}
         try:
-            for ctype in ('building', 'storage'):
+            for ctype in ('building',):#, 'storage'):
                 for const in self.__split_text("//ul[@id='%s']" % ctype):
-                    if not const.strip():
+                    name, level = const.rsplit(' ', 1)
+                    attr_name = BUILDINGS.get(name)
+                    if not attr_name:
                         continue
-                    planet.constructs[ctype] = {}
-                    name, level = const.strip().rsplit(' ', 1)
-                    planet.constructs[ctype][name] \
-                            = int(''.join(level.split('.')))
+                    getattr(planet, attr_name).level = int(level)
         except Exception:
             logger.exception("ERROR: Couldn't update building states")
 
     def update_planet_fleet(self, planet=None):
         planet = planet if planet is not None else self.current_planet
         if self.current_page != PAGES['fleet']:
-            self.go_to(planet, PAGES['fleet'])
+            self.go_to(planet, PAGES['fleet'], update=False)
         logger.info('updating fleet states on %r' % planet)
+        planet.fleet.clear()
         for fleet_type in ('military', 'civil'):
             try:
                 for fleet in self.__split_text("//ul[@id='%s']" % fleet_type):
@@ -100,15 +101,15 @@ class Interface(selenium):
             planet = Planet(name.strip(), coords, position + 1)
             if capital and planet.coords == capital:
                 planet.is_capital = True
-            Empire.add(planet)
+            empire.add(planet)
 
             if not full:
                 continue
-            self.go_to(planet)
-            self.update_planet_fleet()
+            self.update_planet_buildings(planet)
+            self.update_planet_fleet(planet)
+            self.update_planet_resources(planet)
 
-    def go_to(self, planet=None, page=None):
-        logger.debug('Going to page %r on %r' % (page, planet))
+    def go_to(self, planet=None, page=None, update=True):
         if planet is not None and self.current_planet is not planet:
             logger.info('Going to planet %r' % planet)
             self.click("//div[@id='planetList']/div[%d]/a" % (planet.position))
@@ -121,11 +122,12 @@ class Interface(selenium):
             self.current_page = page
             self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
-        self.update_planet_resources(planet)
-        if self.current_page == PAGES['resources']:
+        if update:
             self.update_planet_resources(planet)
-        elif self.current_page == PAGES['fleet']:
-            self.update_planet_fleet(planet)
+            if self.current_page == PAGES['resources']:
+                self.update_planet_resources(planet)
+            elif self.current_page == PAGES['fleet']:
+                self.update_planet_fleet(planet)
 
     def send_resources(self, src, dst, all_ships=False, **kwargs):
         resources, all_resources = {}, False
