@@ -1,7 +1,7 @@
 import logging
 
 from pyogame.fleet import Fleet
-from pyogame.const import RES_TYPES
+from pyogame.const import Resources, RES_TYPES
 
 logger = logging.getLogger(__name__)
 
@@ -21,13 +21,21 @@ class PlanetCollection(object):
             logger.warning('Capital is now %r' % planet)
             self.capital = planet
 
-    @property
-    def colonies(self):
+    def _filter(self, **kwargs):
         pl_col = PlanetCollection()
         for planet in self:
-            if not planet.is_capital:
-                pl_col.add(planet)
+            for key, value in kwargs.items():
+                if getattr(planet, key) == value:
+                    pl_col.add(planet)
         return pl_col
+
+    @property
+    def colonies(self):
+        return self._filter(is_capital=False)
+
+    @property
+    def idles(self):
+        return self._filter(idle=True)
 
     @property
     def fleet(self):
@@ -39,7 +47,7 @@ class PlanetCollection(object):
 
     @property
     def resources(self):
-        resources = {}
+        resources = Resources()
         for planet in self:
             for res_type in RES_TYPES:
                 if not res_type in resources:

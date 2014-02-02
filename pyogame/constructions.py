@@ -9,6 +9,7 @@ class Constructions(object):
     base_deuterium_cost = 0
     power = 1.5
     energy_factor = 10
+    css_dom = None
 
     def __init__(self, level=0):
         self.level = level
@@ -35,21 +36,25 @@ class Constructions(object):
 class MetalMine(Constructions):
     base_metal_cost = 60
     base_crystal_cost = 15
+    css_dom = "css=#button1 a.fastBuild"
 
 
 class CrystalMine(Constructions):
     base_metal_cost = 48
     base_crystal_cost = 24
     power = 1.6
+    css_dom = "css=#button2 a.fastBuild"
 
 
 class DeuteriumSynthetizer(Constructions):
     base_metal_cost = 225
     base_crystal_cost = 75
     energy_factor = 20
+    css_dom = "css=#button3 a.fastBuild"
 
 
 class SolarPlant(Constructions):
     base_metal_cost = 75
     base_crystal_cost = 30
     energy_factor = 20
+    css_dom = "css=#button4 a.fastBuild"

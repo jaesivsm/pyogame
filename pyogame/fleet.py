@@ -38,8 +38,8 @@ class Fleet(object):
 
     def for_moving(self, quantity):
         fleet, tmp_quantity = Fleet(), quantity
-        assert self.capacity >= quantity, 'Too many resources (%r) " \
-                "for fleet %r' % (quantity, self)
+        assert self.capacity >= quantity, 'Too many resources (%r) for fleet' \
+                ' %r with capacity %r' % (quantity, self, self.capacity)
         cmp_func = lambda x,y: cmp(x.capacity, y.capacity)
         for ships in sorted(self, cmp=cmp_func, reverse=True):
             if ships.capacity >= tmp_quantity:

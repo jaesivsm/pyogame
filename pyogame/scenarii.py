@@ -8,14 +8,11 @@ logger = logging.getLogger(__name__)
 
 def rapatriate(interface, destination=None):
     logger.info('launching rapatriation to %r' % destination)
-    if not destination:
-        assert empire.capital, "Empire has no capital " \
-                "and no destination has been provided"
+    if not destination and empire.capital:
         destination = empire.capital
-    for colony in empire.colonies:
-        if destination is colony:
+    assert destination, "Empire has no capital " \
+            "and no destination has been provided"
+    for source in empire:
+        if destination is source:
             continue
-        try:
-            interface.send_resources(colony, destination, all_ships=True)
-        except Exception:
-            logger.exception('An error occured during rapatriation:')
+        interface.send_resources(source, destination, all_ships=True)

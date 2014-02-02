@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
-import re
 import logging
+from lxml import html
 from selenium import selenium
 
 from pyogame.empire import empire
 from pyogame.planet import Planet
-from pyogame.const import PAGES, RES_TYPES, BUILDINGS
+from pyogame.constructions import Constructions
+from pyogame.const import Resources, PAGES, RES_TYPES, BUILDINGS
 
 logger = logging.getLogger(__name__)
 DEFAULT_WAIT_TIME = 40000
@@ -57,9 +58,7 @@ class Interface(selenium):
             logger.exception("ERROR: Couldn't update resources")
 
     def update_planet_buildings(self, planet=None):
-        planet = planet if planet is not None else self.current_planet
-        if self.current_page != PAGES['resources']:
-            self.go_to(planet, PAGES['resources'], update=False)
+        planet, page = self.go_to(planet, PAGES['resources'], update=False)
         logger.info('updating buildings states for %r' % planet)
         try:
             for ctype in ('building',):#, 'storage'):
@@ -73,9 +72,7 @@ class Interface(selenium):
             logger.exception("ERROR: Couldn't update building states")
 
     def update_planet_fleet(self, planet=None):
-        planet = planet if planet is not None else self.current_planet
-        if self.current_page != PAGES['fleet']:
-            self.go_to(planet, PAGES['fleet'], update=False)
+        planet, page = self.go_to(planet, PAGES['fleet'], update=False)
         logger.info('updating fleet states on %r' % planet)
         planet.fleet.clear()
         for fleet_type in ('military', 'civil'):
@@ -93,12 +90,16 @@ class Interface(selenium):
 
     def discover(self, full=False):
         logger.info('Getting list of colonized planets')
-        xpath = "//div[@id='planetList']"
         capital = self._conf_dict['capital'] \
                 if 'capital' in self._conf_dict else None
-        for position, planet in enumerate(self.__split_text(xpath)):
-            name, coords = re.split('\[?\]?', planet.split('\n')[0])[:2]
-            planet = Planet(name.strip(), coords, position + 1)
+        source = html.fromstring(self.get_html_source())
+        planets_list = source.xpath( "//div[@id='planetList']")[0]
+        for position, planet in enumerate(planets_list):
+            name = planet.find_class('planet-name')[0].text.strip()
+            coords = planet.find_class('planet-koords')[0].text.strip('[]')
+            coords = [int(coord) for coord in coords.split(':')]
+            idle = not planet.find_class('icon_wrench')
+            planet = Planet(name, coords, position + 1, idle)
             if capital and planet.coords == capital:
                 planet.is_capital = True
             empire.add(planet)
@@ -108,6 +109,14 @@ class Interface(selenium):
             self.update_planet_buildings(planet)
             self.update_planet_fleet(planet)
             self.update_planet_resources(planet)
+
+    def construct(self, construction, planet=None):
+        planet = planet if planet is not None else self.current_planet
+        if self.current_page != PAGES['resources']:
+            self.go_to(planet, PAGES['resources'], update=False)
+        if not isinstance(construction, Constructions):
+            construction = getattr(planet, construction)
+        self.click(construction.css_dom)
 
     def go_to(self, planet=None, page=None, update=True):
         if planet is not None and self.current_planet is not planet:
@@ -128,14 +137,15 @@ class Interface(selenium):
                 self.update_planet_resources(planet)
             elif self.current_page == PAGES['fleet']:
                 self.update_planet_fleet(planet)
+        return self.current_planet, self.current_page
 
     def send_resources(self, src, dst, all_ships=False, **kwargs):
-        resources, all_resources = {}, False
+        resources, all_resources = Resources(), True
         self.go_to(src, PAGES['fleet'])
         for res_type in RES_TYPES:
             if res_type in kwargs:
                 resources[res_type] = kwargs[res_type]
-        all_resources = not resources
+                all_resources = False
 
         if not src.fleet.transports:
             logger.warn("No ships on %r, can't move resources" % src)
@@ -145,9 +155,7 @@ class Interface(selenium):
             for ships in src.fleet.transports:
                 self.click(ships.xpath)
         else:
-            sum_resources = sum(
-                    [res for res in (resources or src.resources).values()])
-            for ships in src.fleet.transports.for_moving(sum_resources):
+            for ships in src.fleet.transports.for_moving(resources.total):
                 self.type('id=%s' % ships.ship_id, ships.quantity)
 
         self.click("css=#continue > span")
@@ -164,7 +172,7 @@ class Interface(selenium):
         if all_resources:
             self.click("css=#allresources > img")
         else:
-            for res_type, quantity in resources.items():
+            for res_type, quantity in resources:
                 self.type('id=%s' % res_type, quantity)
 
         self.click("css=#start > span")
