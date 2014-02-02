@@ -9,13 +9,12 @@ logger = logging.getLogger(__name__)
 
 
 class Planet(object):
-    is_capital = False
 
-    def __init__(self, name, coords, position, idle=True):
+    def __init__(self, name, coords, position):
         self.name = name
         self.coords = coords
         self.position = position
-        self.idle = idle
+        self.flags = []
 
         self.fleet = Fleet()
         self.resources = Resources()
@@ -32,3 +31,22 @@ class Planet(object):
         if isinstance(other, Planet) and other.coords == self.coords:
             return True
         return False
+
+    def add_flag(self, flag):
+        if not self.has_flag(flag):
+            self.flags.append(flag)
+
+    def del_flag(self, flag):
+        if self.has_flag(flag):
+            self.flags.remove(flag)
+
+    def has_flag(self, flag):
+        return flag in self.flags
+
+    @property
+    def is_idle(self):
+        return 'idle' in self.flags
+
+    @property
+    def is_capital(self):
+        return 'capital' in self.flags

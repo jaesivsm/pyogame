@@ -94,14 +94,15 @@ class Interface(selenium):
                 if 'capital' in self._conf_dict else None
         source = html.fromstring(self.get_html_source())
         planets_list = source.xpath( "//div[@id='planetList']")[0]
-        for position, planet in enumerate(planets_list):
-            name = planet.find_class('planet-name')[0].text.strip()
-            coords = planet.find_class('planet-koords')[0].text.strip('[]')
+        for position, elem in enumerate(planets_list):
+            name = elem.find_class('planet-name')[0].text.strip()
+            coords = elem.find_class('planet-koords')[0].text.strip('[]')
             coords = [int(coord) for coord in coords.split(':')]
-            idle = not planet.find_class('icon_wrench')
-            planet = Planet(name, coords, position + 1, idle)
+            planet = Planet(name, coords, position + 1)
+            if not elem.find_class('icon_wrench'):
+                planet.add_flag('idle')
             if capital and planet.coords == capital:
-                planet.is_capital = True
+                planet.add_flag('capital')
             empire.add(planet)
 
             if not full:

@@ -10,24 +10,41 @@ class PlanetCollection(object):
 
     def __init__(self):
         self.planets = {}
-        self.capital = None
+        self.filters = {}
 
     def __iter__(self):
-        return iter(self.planets.values())
+        class FilterFailed(Exception):
+            pass
+        for planet in self.planets.values():
+            try:
+                for key in self.filters:
+                    if isinstance(key, (list, tuple)):
+                        call = getattr(planet, key[0])
+                        if call(*key[1:]) == self.filters[key]:
+                            continue
+                    elif getattr(planet, key) == self.filters[key]:
+                        continue
+                    raise FilterFailed()
+                yield planet
+            except FilterFailed:
+                pass
 
     def add(self, planet):
         self.planets[planet.position] = planet
-        if planet.is_capital:
-            logger.warning('Capital is now %r' % planet)
-            self.capital = planet
 
-    def _filter(self, **kwargs):
+    def _filter(self, *args, **kwargs):
         pl_col = PlanetCollection()
-        for planet in self:
-            for key, value in kwargs.items():
-                if getattr(planet, key) == value:
-                    pl_col.add(planet)
+        pl_col.planets = self.planets
+        pl_col.filters.update(self.filters)
+        for arg in args:
+            if isinstance(arg, dict):
+                pl_col.filters.update(arg)
+        pl_col.filters.update(kwargs)
         return pl_col
+
+    @property
+    def capital(self):
+        return list(self._filter(is_capital=True))[0]
 
     @property
     def colonies(self):
@@ -35,7 +52,13 @@ class PlanetCollection(object):
 
     @property
     def idles(self):
-        return self._filter(idle=True)
+        return self._filter(is_idle=True)
+
+    def has_flag(self, flag):
+        return self._filter({('has_flag', flag): True})
+
+    def has_no_flag(self, flag):
+        return self._filter({('has_flag', flag): False})
 
     @property
     def fleet(self):
@@ -50,8 +73,6 @@ class PlanetCollection(object):
         resources = Resources()
         for planet in self:
             for res_type in RES_TYPES:
-                if not res_type in resources:
-                    resources[res_type] = 0
                 resources[res_type] += planet.resources[res_type]
         return resources
 

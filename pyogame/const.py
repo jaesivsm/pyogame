@@ -2,11 +2,11 @@ __pages = {
         'fleet': {'fr': 'Flotte'},
         'resources': {'fr': 'Ressources'},
 }
-BUILDINGS = {
-        u'Mine de m\xe9tal': 'metal_mine',
-        u'Mine de cristal': 'crystal_mine',
-        u'Synth\xe9tiseur de deut\xe9rium': 'deuterium_synthetize',
-        u'Centrale \xe9lectrique solaire': 'solar_plant',
+__buildings = {
+        'metal_mine': {'fr': u'Mine de m\xe9tal'},
+        'crystal_mine': {'fr': u'Mine de cristal'},
+        'deuterium_synthetize': {'fr': u'Synth\xe9tiseur de deut\xe9rium'},
+        'solar_plant': {'fr': u'Centrale \xe9lectrique solaire'},
 }
 RES_TYPES = ['deuterium', 'crystal', 'metal', 'energy']
 
@@ -55,16 +55,19 @@ class Resources(object):
 
 class Collection(object):
 
-    def __init__(self, coll, lang='fr'):
-        self.coll = coll
+    def __init__(self, dictionnary, lang='fr'):
         self.lang = lang
+        self.dictionnary = {}
+        for key in dictionnary:
+            self.dictionnary[key] = dictionnary[key][lang]
+            self.dictionnary[dictionnary[key][lang]] = key
 
-    def __getitem__(self, key):
-        return self.coll[key][self.lang]
+    def __getitem__(self, *args, **kwargs):
+        return self.dictionnary.__getitem__(*args, **kwargs)
 
-    def get(self, key, default=None):
-        item = self.coll.get(key)
-        return item[self.lang] if item else None
+    def get(self, *args, **kwargs):
+        return self.dictionnary.get(*args, **kwargs)
 
 
 PAGES = Collection(__pages)
+BUILDINGS = Collection(__buildings)

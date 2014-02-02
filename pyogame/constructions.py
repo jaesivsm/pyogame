@@ -1,5 +1,7 @@
 import logging
 
+from pyogame.const import Resources
+
 logger = logging.getLogger(__name__)
 
 
@@ -20,7 +22,9 @@ class Constructions(object):
 
     @property
     def next_level_cost(self):
-        return self.cost('metal'), self.cost('crystal'), self.cost('deuterium')
+        return Resources(metal=self.cost('metal'),
+                crystal=self.cost('crystal'),
+                deuterium=self.cost('deuterium'))
 
     def energy(self, level):
         return self.energy_factor * level * pow(1.1, level)
