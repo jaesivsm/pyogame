@@ -50,3 +50,17 @@ class Planet(object):
     @property
     def is_capital(self):
         return 'capital' in self.flags
+
+    @property
+    def to_construct(self):
+        if self.deuterium_synthetize.level < self.metal_mine.level - 4:
+            if self.deuterium_synthetize.cost.energy > self.resources.energy:
+                return self.solar_plant
+            return self.deuterium_synthetize
+        if self.crystal_mine.level <= self.metal_mine.level - 2:
+            if self.crystal_mine.cost.energy > self.resources.energy:
+                return self.solar_plant
+            return self.crystal_mine
+        if self.metal_mine.cost.energy > self.resources.energy:
+            return self.solar_plant
+        return self.metal_mine

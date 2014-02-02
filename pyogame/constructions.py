@@ -11,27 +11,25 @@ class Constructions(object):
     base_deuterium_cost = 0
     power = 1.5
     energy_factor = 10
+    cmp_factor = 1
     css_dom = None
 
     def __init__(self, level=0):
         self.level = level
 
-    def cost(self, res, level=None):
+    def _cost(self, res, level=None):
         level = level if level else self.level
         return getattr(self, 'base_%s_cost' % res) * pow(self.power, level)
 
-    @property
-    def next_level_cost(self):
-        return Resources(metal=self.cost('metal'),
-                crystal=self.cost('crystal'),
-                deuterium=self.cost('deuterium'))
-
-    def energy(self, level):
+    def _energy(self, level):
         return self.energy_factor * level * pow(1.1, level)
 
     @property
-    def energy_needed(self):
-        return self.energy(self.level+1) - self.energy(self.level)
+    def cost(self):
+        return Resources(metal=self._cost('metal'),
+                crystal=self._cost('crystal'),
+                deuterium=self._cost('deuterium'),
+                energy=self._energy(self.level+1) - self._energy(self.level))
 
     def __repr__(self):
         return "<%s(%d)>" % (self.__class__.__name__, self.level)

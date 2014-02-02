@@ -76,16 +76,19 @@ class PlanetCollection(object):
                 resources[res_type] += planet.resources[res_type]
         return resources
 
-    def cheapest(self, construct_type):
+    @property
+    def cheapest(self):
         "return the planet with the cheapest construction of the given type"
         cheapest = None
         for planet in self:
-            construct = getattr(planet, construct_type)
             if not cheapest:
                 cheapest = planet
-            if construct.level < getattr(cheapest, construct_type).level:
+            elif planet.to_construct.cost < cheapest.to_construct.cost:
                 cheapest = planet
         return cheapest
+
+    def _flags(self):
+        return {planet.position: planet.flags for planet in self}
 
     def __len__(self):
         return len(self.planets)

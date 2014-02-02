@@ -6,7 +6,7 @@ from selenium import selenium
 from pyogame.empire import empire
 from pyogame.planet import Planet
 from pyogame.constructions import Constructions
-from pyogame.const import Resources, PAGES, RES_TYPES, BUILDINGS
+from pyogame.const import Resources, PAGES, RES_TYPES
 
 logger = logging.getLogger(__name__)
 DEFAULT_WAIT_TIME = 40000
@@ -60,16 +60,15 @@ class Interface(selenium):
     def update_planet_buildings(self, planet=None):
         planet, page = self.go_to(planet, PAGES['resources'], update=False)
         logger.info('updating buildings states for %r' % planet)
-        try:
-            for ctype in ('building',):#, 'storage'):
-                for const in self.__split_text("//ul[@id='%s']" % ctype):
-                    name, level = const.rsplit(' ', 1)
-                    attr_name = BUILDINGS.get(name)
-                    if not attr_name:
-                        continue
-                    getattr(planet, attr_name).level = int(level)
-        except Exception:
-            logger.exception("ERROR: Couldn't update building states")
+        buildings = ['metal_mine', 'crystal_mine', 'deuterium_synthetize',
+                'solar_plant']
+        source = html.fromstring(self.get_html_source())
+        for pos, ele in enumerate(source.xpath("//span[@class='level']")):
+            try:
+                building = getattr(planet, buildings[pos])
+            except IndexError:
+                continue
+            building.level = int(ele.text_content().split()[-1])
 
     def update_planet_fleet(self, planet=None):
         planet, page = self.go_to(planet, PAGES['fleet'], update=False)

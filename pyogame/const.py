@@ -2,12 +2,6 @@ __pages = {
         'fleet': {'fr': 'Flotte'},
         'resources': {'fr': 'Ressources'},
 }
-__buildings = {
-        'metal_mine': {'fr': u'Mine de m\xe9tal'},
-        'crystal_mine': {'fr': u'Mine de cristal'},
-        'deuterium_synthetize': {'fr': u'Synth\xe9tiseur de deut\xe9rium'},
-        'solar_plant': {'fr': u'Centrale \xe9lectrique solaire'},
-}
 RES_TYPES = ['deuterium', 'crystal', 'metal', 'energy']
 
 
@@ -70,4 +64,3 @@ class Collection(object):
 
 
 PAGES = Collection(__pages)
-BUILDINGS = Collection(__buildings)
