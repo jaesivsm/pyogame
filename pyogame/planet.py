@@ -1,8 +1,7 @@
 import logging
 
-from pyogame import const
+from pyogame.const import Resources, IDLE, CAPITAL, WAITING_RES
 from pyogame.fleet import Fleet
-from pyogame.const import Resources
 from pyogame.constructions import MetalMine, CrystalMine, \
         DeuteriumSynthetizer, SolarPlant
 
@@ -33,6 +32,9 @@ class Planet(object):
             return True
         return False
 
+    def has_flag(self, flag):
+        return flag in self._flags
+
     def add_flag(self, flag, value=True):
         if not self.has_flag(flag):
             self._flags[flag] = value
@@ -40,8 +42,14 @@ class Planet(object):
                 and type(self._flags[flag]) is dict:
             self._flags[flag].update(value)
 
-    def has_flag(self, flag):
-        return flag in self._flags
+    def del_flag(self, flag):
+        if self.has_flag(flag):
+            del self._flags[flag]
+
+    def get_flag(self, flag, default=None):
+        if self.has_flag(flag):
+            return self._flags[flag]
+        return default
 
     @property
     def is_fleet_empty(self):
@@ -49,11 +57,11 @@ class Planet(object):
 
     @property
     def is_idle(self):
-        return self.has_flag('idle') and not self.has_flag(const.WAITING_RES)
+        return self.has_flag(IDLE) and not self.has_flag(WAITING_RES)
 
     @property
     def is_capital(self):
-        return self.has_flag('capital')
+        return self.has_flag(CAPITAL)
 
     @property
     def to_construct(self):

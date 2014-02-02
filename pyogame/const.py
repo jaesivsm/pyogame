@@ -3,11 +3,13 @@ __pages = {
         'resources': {'fr': 'Ressources'},
 }
 RES_TYPES = ['deuterium', 'crystal', 'metal', 'energy']
-CACHE_PATH = 'pyogame.flags'
+CACHE_PATH = 'planets.flags'
 
 # Flags
-FLEET_ARRIVAL = 'FLEET_ARRIVAL'
+IDLE = 'IDLE'
+CAPITAL = 'CAPITAL'
 WAITING_RES = 'WAITING_RES'
+FLEET_ARRIVAL = 'FLEET_ARRIVAL'
 
 
 class Resources(object):

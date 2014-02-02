@@ -104,7 +104,9 @@ class PlanetCollection(object):
 
 
     def loads_flags(self, cache):
-        for position, flags in cache.items():
+        import ipdb
+        ipdb.set_trace()
+        for position, flags in json.loads(cache).items():
             for flag, value in flags.items():
                 if flag == FLEET_ARRIVAL:
                     for uuid in value:
@@ -113,7 +115,7 @@ class PlanetCollection(object):
 
     def dumps_flags(self):
         handler = lambda o: o.isoformat() if isinstance(o, datetime) else None
-        return json.dump({planet.position: planet._flags for planet in self},
+        return json.dumps({planet.position: planet._flags for planet in self},
                 default=handler)
 
     def __len__(self):

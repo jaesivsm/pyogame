@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import re
+import time
 import logging
 from lxml import html
 from uuid import uuid4
@@ -10,7 +11,8 @@ from selenium import selenium
 from pyogame.empire import empire
 from pyogame.planet import Planet
 from pyogame.constructions import Constructions
-from pyogame.const import PAGES, RES_TYPES, FLEET_ARRIVAL, CACHE_PATH
+from pyogame.const import PAGES, RES_TYPES, FLEET_ARRIVAL, \
+        CACHE_PATH, IDLE, CAPITAL, WAITING_RES
 
 logger = logging.getLogger(__name__)
 DEFAULT_WAIT_TIME = 40000
@@ -29,6 +31,7 @@ class Interface(selenium):
                 "localhost", 4444, "*chrome", "http://ogame.fr/")
         self.current_planet = None
         self.current_page = None
+        self.crawled = False
         self.start()
 
         logger.info('Logging in with identity %r' % conf_dict['user'])
@@ -38,17 +41,15 @@ class Interface(selenium):
         self.type("id=usernameLogin", conf_dict['user'])
         self.type("id=passwordLogin", conf_dict['password'])
         self.click("id=loginSubmit")
-        self.wait_for_page_to_load(DEFAULT_WAIT_TIME * 2)
+        self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
+        time.sleep(1)
         self.discover()
-        if os.path.exists(CACHE_PATH):
-            with open(CACHE_PATH, 'r') as fp:
-                empire.load_flags(fp.read())
         self.update_flags()
 
     def __del__(self):
         with open(CACHE_PATH, 'w') as fp:
-            fp.write(empire.dump_flags())
+            fp.write(empire.dumps_flags())
         self.stop()
 
     def __split_text(self, xpath, split_on='\n'):
@@ -98,14 +99,35 @@ class Interface(selenium):
 
     def update_flags(self):
         logger.debug('updating flags')
-        empire.del_flags('idle')
+        now = datetime.now()
+        empire.del_flags(IDLE)
         source = html.fromstring(self.get_html_source())
         planets_list = source.xpath("//div[@id='planetList']")[0]
         for position, elem in enumerate(planets_list):
             if not elem.find_class('icon_wrench'):
-                empire.planets[position + 1].add_flag('idle')
+                empire.planets[position + 1].add_flag(IDLE)
+        for planet in empire:
+            if not planet.has_flag(WAITING_RES):
+                planet.del_flag(FLEET_ARRIVAL)
+            waiting = planet.get_flag(WAITING_RES)
+            waited = []
+            if planet.has_flag(FLEET_ARRIVAL):
+                to_dels = []
+                fleet_arrival = planet.get_flag(FLEET_ARRIVAL)
+                for travel_id, date in fleet_arrival.items():
+                    if date < now:
+                        if travel_id in waiting:
+                            waited.append(waiting[travel_id])
+                        to_dels.append(travel_id)
+                for to_del in to_dels:
+                    del fleet_arrival[to_del]
+                if not fleet_arrival:
+                    planet.del_flag(FLEET_ARRIVAL)
+                for construct in waited:
+                    if waiting.values().count(construct) == 0:
+                        self.construct(getattr(planet, construct), planet)
 
-    def discover(self, full=False):
+    def discover(self):
         logger.info('Getting list of colonized planets')
         source = html.fromstring(self.get_html_source())
         planets_list = source.xpath("//div[@id='planetList']")[0]
@@ -115,14 +137,25 @@ class Interface(selenium):
             coords = [int(coord) for coord in coords.split(':')]
             planet = Planet(name, coords, position + 1)
             if self.__capital_crds and planet.coords == self.__capital_crds:
-                planet.add_flag('capital')
+                planet.add_flag(CAPITAL)
             empire.add(planet)
 
-            if not full:
-                continue
-            self.update_planet_buildings(planet)
-            self.update_planet_fleet(planet)
+        if os.path.exists(CACHE_PATH):
+            try:
+                with open(CACHE_PATH, 'r') as fp:
+                    empire.loads_flags(fp.read())
+            except ValueError:
+                logger.error('Cache has been corrupted, ignoring it')
+            os.remove(CACHE_PATH)
+
+    def crawl(self, building=False, fleet=False):
+        for planet in empire:
+            if building:
+                self.update_planet_buildings(planet)
+            if fleet:
+                self.update_planet_fleet(planet)
             self.update_planet_resources(planet)
+        self.crawled = True
 
     def construct(self, construction, planet=None):
         planet = planet if planet is not None else self.current_planet
@@ -185,10 +218,12 @@ class Interface(selenium):
         else:
             for res_type, quantity in resources.movable:
                 self.type('id=%s' % res_type, quantity)
+        time.sleep(1)
         day, month, year, hour, minute, second = [int(i) for i in
                 re.split('[\.: ]', self.get_text("//span[@id='arrivalTime']"))]
-        dst.add_flag(FLEET_ARRIVAL, {travel_id:
-                datetime(year + 2000, month, day, hour, minute + 1, second)})
+        arrival = datetime(year + 2000, month, day, hour, minute + 1, second)
+        logger.info('Resources will be arriving at %s' % arrival)
+        dst.add_flag(FLEET_ARRIVAL, {travel_id: arrival})
 
         self.click("css=#start > span")
         self.wait_for_page_to_load(DEFAULT_WAIT_TIME)

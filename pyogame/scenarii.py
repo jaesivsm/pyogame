@@ -9,11 +9,12 @@ logger = logging.getLogger(__name__)
 
 def rapatriate(interface, destination=None):
     logger.info('launching rapatriation to %r' % destination)
+    interface.crawl(fleet=True)
     if not destination and empire.capital:
         destination = empire.capital
     assert destination, "Empire has no capital " \
             "and no destination has been provided"
-    for source in empire:
+    for source in empire.with_fleet:
         if destination is source:
             continue
         interface.send_resources(source, destination, all_ships=True)
@@ -27,7 +28,8 @@ def plan_construction(interface):
     assert planet.to_construct.cost.movable.total < empire.capital.fleet.capacity
     travel_id = interface.send_resources(empire.capital, planet,
             resources=empire.cheapest.to_construct.cost)
-    planet.add_flag(const.WAITING_RES, travel_id)
+    planet.add_flag(const.WAITING_RES,
+            {travel_id, empire.cheapest.to_construct.building_attr})
 
 
 def resources_reception_and_construction(interface):

@@ -13,6 +13,7 @@ class Constructions(object):
     energy_factor = 10
     cmp_factor = 1
     css_dom = None
+    building_attr = ''
 
     def __init__(self, level=0):
         self.level = level
@@ -39,6 +40,7 @@ class MetalMine(Constructions):
     base_metal_cost = 60
     base_crystal_cost = 15
     css_dom = "css=#button1 a.fastBuild"
+    building_attr = 'metal_mine'
 
 
 class CrystalMine(Constructions):
@@ -46,6 +48,7 @@ class CrystalMine(Constructions):
     base_crystal_cost = 24
     power = 1.6
     css_dom = "css=#button2 a.fastBuild"
+    building_attr = 'crystal_mine'
 
 
 class DeuteriumSynthetizer(Constructions):
@@ -53,6 +56,7 @@ class DeuteriumSynthetizer(Constructions):
     base_crystal_cost = 75
     energy_factor = 20
     css_dom = "css=#button3 a.fastBuild"
+    building_attr = 'deuterium_synthetize'
 
 
 class SolarPlant(Constructions):
@@ -60,3 +64,4 @@ class SolarPlant(Constructions):
     base_crystal_cost = 30
     energy_factor = 20
     css_dom = "css=#button4 a.fastBuild"
+    building_attr = 'solar_plant'
