@@ -1,7 +1,8 @@
 import logging
 
-from pyogame.const import Resources
+from pyogame import const
 from pyogame.fleet import Fleet
+from pyogame.const import Resources
 from pyogame.constructions import MetalMine, CrystalMine, \
         DeuteriumSynthetizer, SolarPlant
 
@@ -14,7 +15,7 @@ class Planet(object):
         self.name = name
         self.coords = coords
         self.position = position
-        self.flags = []
+        self._flags = {}
 
         self.fleet = Fleet()
         self.resources = Resources()
@@ -32,24 +33,27 @@ class Planet(object):
             return True
         return False
 
-    def add_flag(self, flag):
+    def add_flag(self, flag, value=True):
         if not self.has_flag(flag):
-            self.flags.append(flag)
-
-    def del_flag(self, flag):
-        if self.has_flag(flag):
-            self.flags.remove(flag)
+            self._flags[flag] = value
+        if self.has_flag(flag) and type(value) is dict \
+                and type(self._flags[flag]) is dict:
+            self._flags[flag].update(value)
 
     def has_flag(self, flag):
-        return flag in self.flags
+        return flag in self._flags
+
+    @property
+    def is_fleet_empty(self):
+        return not bool(self.fleet)
 
     @property
     def is_idle(self):
-        return 'idle' in self.flags
+        return self.has_flag('idle') and not self.has_flag(const.WAITING_RES)
 
     @property
     def is_capital(self):
-        return 'capital' in self.flags
+        return self.has_flag('capital')
 
     @property
     def to_construct(self):
@@ -57,7 +61,7 @@ class Planet(object):
             if self.deuterium_synthetize.cost.energy > self.resources.energy:
                 return self.solar_plant
             return self.deuterium_synthetize
-        if self.crystal_mine.level <= self.metal_mine.level - 2:
+        if self.crystal_mine.level < self.metal_mine.level - 2:
             if self.crystal_mine.cost.energy > self.resources.energy:
                 return self.solar_plant
             return self.crystal_mine

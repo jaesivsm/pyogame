@@ -1,3 +1,4 @@
 conf.json
 venv/
 build/
+pyogame.flags

@@ -1,7 +1,10 @@
+import json
 import logging
+import dateutil.parser
+from datetime import datetime
 
 from pyogame.fleet import Fleet
-from pyogame.const import Resources, RES_TYPES
+from pyogame.const import Resources, RES_TYPES, FLEET_ARRIVAL
 
 logger = logging.getLogger(__name__)
 
@@ -11,10 +14,12 @@ class PlanetCollection(object):
     def __init__(self):
         self.planets = {}
         self.filters = {}
+        self.__cache = []
 
     def __iter__(self):
         class FilterFailed(Exception):
             pass
+        self.__cache = []
         for planet in self.planets.values():
             try:
                 for key in self.filters:
@@ -25,6 +30,7 @@ class PlanetCollection(object):
                     elif getattr(planet, key) == self.filters[key]:
                         continue
                     raise FilterFailed()
+                self.__cache.append(planet)
                 yield planet
             except FilterFailed:
                 pass
@@ -43,10 +49,6 @@ class PlanetCollection(object):
         return pl_col
 
     @property
-    def capital(self):
-        return list(self._filter(is_capital=True))[0]
-
-    @property
     def colonies(self):
         return self._filter(is_capital=False)
 
@@ -54,11 +56,24 @@ class PlanetCollection(object):
     def idles(self):
         return self._filter(is_idle=True)
 
+    @property
+    def with_fleet(self):
+        return self._filter(is_fleet_empty=False)
+
     def has_flag(self, flag):
         return self._filter({('has_flag', flag): True})
 
     def has_no_flag(self, flag):
         return self._filter({('has_flag', flag): False})
+
+    def del_flags(self, flag):
+        for planet in self:
+            if flag in planet._flags:
+                del planet._flags[flag]
+
+    @property
+    def capital(self):
+        return list(self._filter(is_capital=True))[0]
 
     @property
     def fleet(self):
@@ -87,14 +102,24 @@ class PlanetCollection(object):
                 cheapest = planet
         return cheapest
 
-    def _flags(self):
-        return {planet.position: planet.flags for planet in self}
+
+    def loads_flags(self, cache):
+        for position, flags in cache.items():
+            for flag, value in flags.items():
+                if flag == FLEET_ARRIVAL:
+                    for uuid in value:
+                        value[uuid] = dateutil.parser.parse(value[uuid])
+                empire.planets[int(position)].add_flag(flag, value)
+
+    def dumps_flags(self):
+        handler = lambda o: o.isoformat() if isinstance(o, datetime) else None
+        return json.dump({planet.position: planet._flags for planet in self},
+                default=handler)
 
     def __len__(self):
-        return len(self.planets)
+        return len(self.__cache)
 
     def __repr__(self):
         return repr(','.join([repr(planet) for planet in self]))
-
 
 empire = PlanetCollection()

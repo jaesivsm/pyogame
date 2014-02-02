@@ -3,24 +3,34 @@ __pages = {
         'resources': {'fr': 'Ressources'},
 }
 RES_TYPES = ['deuterium', 'crystal', 'metal', 'energy']
+CACHE_PATH = 'pyogame.flags'
+
+# Flags
+FLEET_ARRIVAL = 'FLEET_ARRIVAL'
+WAITING_RES = 'WAITING_RES'
 
 
 class Resources(object):
 
     def __init__(self, metal=0, crystal=0, deuterium=0, energy=0):
-        self.metal = metal
-        self.crystal = crystal
-        self.deuterium = deuterium
-        self.energy = energy
+        self.metal = int(metal)
+        self.crystal = int(crystal)
+        self.deuterium = int(deuterium)
+        self.energy = int(energy)
 
     @property
     def total(self):
         return self.metal + self.crystal + self.deuterium
 
+    @property
+    def movable(self):
+        res = Resources(self.metal, self.crystal, self.deuterium)
+        del res.energy
+        return res
+
     def __iter__(self):
-        for res_type in RES_TYPES:
-            if self[res_type]:
-                yield res_type, self[res_type]
+        for res_type, amount in self.__dict__.items():
+            yield res_type, amount
 
     def __getitem__(self, key):
         if not key in RES_TYPES:
@@ -34,8 +44,8 @@ class Resources(object):
 
     def __cmp__(self, other):
         comp = {}
-        for res_type in RES_TYPES:
-            if self[res_type] < other[res_type]:
+        for res_type, amount in self.movable:  #Only compares what can be moved
+            if amount < other[res_type]:
                 return -1
             comp[res_type] = self[res_type] > other[res_type]
         if comp.values().count(False) == 4:
