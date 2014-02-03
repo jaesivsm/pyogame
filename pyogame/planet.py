@@ -46,6 +46,12 @@ class Planet(object):
         if self.has_flag(flag):
             del self._flags[flag]
 
+    def del_flag_key(self, flag, key):
+        if self.has_flag(flag) and key in self._flags[flag]:
+            self._flags[flag].pop(key)
+        if not self.get_flag(flag):
+            self.del_flag(flag)
+
     def get_flag(self, flag, default=None):
         if self.has_flag(flag):
             return self._flags[flag]

@@ -104,8 +104,6 @@ class PlanetCollection(object):
 
 
     def loads_flags(self, cache):
-        import ipdb
-        ipdb.set_trace()
         for position, flags in json.loads(cache).items():
             for flag, value in flags.items():
                 if flag == FLEET_ARRIVAL:

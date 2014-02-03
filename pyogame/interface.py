@@ -5,8 +5,8 @@ import time
 import logging
 from lxml import html
 from uuid import uuid4
-from datetime import datetime
 from selenium import selenium
+from datetime import timedelta, datetime
 
 from pyogame.empire import empire
 from pyogame.planet import Planet
@@ -48,8 +48,7 @@ class Interface(selenium):
         self.update_flags()
 
     def __del__(self):
-        with open(CACHE_PATH, 'w') as fp:
-            fp.write(empire.dumps_flags())
+        self.clean()
         self.stop()
 
     def __split_text(self, xpath, split_on='\n'):
@@ -109,23 +108,22 @@ class Interface(selenium):
         for planet in empire:
             if not planet.has_flag(WAITING_RES):
                 planet.del_flag(FLEET_ARRIVAL)
-            waiting = planet.get_flag(WAITING_RES)
-            waited = []
+            construct = None
             if planet.has_flag(FLEET_ARRIVAL):
                 to_dels = []
-                fleet_arrival = planet.get_flag(FLEET_ARRIVAL)
-                for travel_id, date in fleet_arrival.items():
+                for travel_id, date \
+                        in planet.get_flag(FLEET_ARRIVAL).items():
                     if date < now:
-                        if travel_id in waiting:
-                            waited.append(waiting[travel_id])
+                        if travel_id in planet.get_flag(WAITING_RES):
+                            construct = planet.get_flag(WAITING_RES)[travel_id]
                         to_dels.append(travel_id)
+                import ipdb
+                ipdb.set_trace()
                 for to_del in to_dels:
-                    del fleet_arrival[to_del]
-                if not fleet_arrival:
-                    planet.del_flag(FLEET_ARRIVAL)
-                for construct in waited:
-                    if waiting.values().count(construct) == 0:
-                        self.construct(getattr(planet, construct), planet)
+                    planet.del_flag_key(FLEET_ARRIVAL, to_del)
+                    planet.del_flag_key(WAITING_RES, to_del)
+                if construct and not planet.get_flag(WAITING_RES):
+                    self.construct(getattr(planet, construct), planet)
 
     def discover(self):
         logger.info('Getting list of colonized planets')
@@ -140,20 +138,28 @@ class Interface(selenium):
                 planet.add_flag(CAPITAL)
             empire.add(planet)
 
-        if os.path.exists(CACHE_PATH):
-            try:
-                with open(CACHE_PATH, 'r') as fp:
-                    empire.loads_flags(fp.read())
-            except ValueError:
-                logger.error('Cache has been corrupted, ignoring it')
-            os.remove(CACHE_PATH)
+        if not os.path.exists(CACHE_PATH):
+            logger.info('No cache file found at %r' % CACHE_PATH)
+            return
+        try:
+            with open(CACHE_PATH, 'r') as fp:
+                empire.loads_flags(fp.read())
+        except ValueError:
+            logger.error('Cache has been corrupted, ignoring it')
+        os.remove(CACHE_PATH)
 
     def crawl(self, building=False, fleet=False):
         for planet in empire:
-            if building:
-                self.update_planet_buildings(planet)
-            if fleet:
-                self.update_planet_fleet(planet)
+            if self.current_page == PAGES['fleet']:
+                if fleet:
+                    self.update_planet_fleet(planet)
+                if building:
+                    self.update_planet_buildings(planet)
+            else:
+                if building:
+                    self.update_planet_buildings(planet)
+                if fleet:
+                    self.update_planet_fleet(planet)
             self.update_planet_resources(planet)
         self.crawled = True
 
@@ -221,7 +227,8 @@ class Interface(selenium):
         time.sleep(1)
         day, month, year, hour, minute, second = [int(i) for i in
                 re.split('[\.: ]', self.get_text("//span[@id='arrivalTime']"))]
-        arrival = datetime(year + 2000, month, day, hour, minute + 1, second)
+        arrival = datetime(year + 2000, month, day, hour, minute, second)
+        arrival = arrival + timedelta(seconds=60)
         logger.info('Resources will be arriving at %s' % arrival)
         dst.add_flag(FLEET_ARRIVAL, {travel_id: arrival})
 
@@ -231,5 +238,8 @@ class Interface(selenium):
         self.update_planet_fleet(src)
         return travel_id
 
+    def clean(self):
+        with open(CACHE_PATH, 'w') as fp:
+            fp.write(empire.dumps_flags())
 
 # vim: set et sts=4 sw=4 tw=120:

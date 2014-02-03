@@ -30,8 +30,9 @@ def plan_construction(interface):
     assert planet.to_construct.cost.movable.total < empire.capital.fleet.capacity
     travel_id = interface.send_resources(empire.capital, planet,
             resources=empire.cheapest.to_construct.cost)
+
     planet.add_flag(const.WAITING_RES,
-            {travel_id, empire.cheapest.to_construct.building_attr})
+            {travel_id: empire.cheapest.to_construct.building_attr})
 
 
 def resources_reception_and_construction(interface):
