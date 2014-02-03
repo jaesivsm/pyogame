@@ -9,13 +9,15 @@ logger = logging.getLogger(__name__)
 
 def rapatriate(interface, destination=None):
     logger.info('launching rapatriation to %r' % destination)
-    interface.crawl(fleet=True)
     if not destination and empire.capital:
         destination = empire.capital
     assert destination, "Empire has no capital " \
             "and no destination has been provided"
-    for source in empire.with_fleet:
+    for source in empire:
         if destination is source:
+            continue
+        interface.go_to(source, const.PAGES['fleet'])
+        if not source.fleet:
             continue
         interface.send_resources(source, destination, all_ships=True)
 
