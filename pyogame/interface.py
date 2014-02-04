@@ -35,7 +35,7 @@ class Interface(selenium):
         self.start()
 
         logger.info('Logging in with identity %r' % conf_dict['user'])
-        self.open("http://ogame.fr/")
+        self.open(conf_dict['login_page'])
         self.click("id=loginBtn")
         self.select("id=serverLogin", "label=%s" % conf_dict['univers'])
         self.type("id=usernameLogin", conf_dict['user'])
@@ -128,7 +128,11 @@ class Interface(selenium):
     def discover(self):
         logger.info('Getting list of colonized planets')
         source = html.fromstring(self.get_html_source())
-        planets_list = source.xpath("//div[@id='planetList']")[0]
+        try:
+            planets_list = source.xpath("//div[@id='planetList']")[0]
+        except IndexError:
+            logger.error("Couldn't get the planet list. Is your login page the right one? See configuration")
+            exit(1)
         for position, elem in enumerate(planets_list):
             name = elem.find_class('planet-name')[0].text.strip()
             coords = elem.find_class('planet-koords')[0].text.strip('[]')
