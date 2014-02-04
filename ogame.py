@@ -15,17 +15,18 @@ CONF_PATH = 'conf.json'
 
 
 if __name__ == "__main__":
-    user, logfile, loglevel = utils.parse_args()
+    args, logfile, loglevel = utils.parse_args()
     utils.set_logger(logfile, loglevel)
 
     with open(CONF_PATH) as conf_file:
         conf = json.load(conf_file)
 
-    if user not in conf:
-        logger.error('Account %r unknown' % user)
+    if args.user not in conf:
+        logger.error('Account %r unknown' % args.user)
         exit(1)
     else:
-        session = Interface(conf[user])
+        session = Interface(conf[args.user])
+    if args.rapatriate :
         scenarii.rapatriate(session)
 
 # vim: set et sts=4 sw=4 tw=120:

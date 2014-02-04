@@ -15,12 +15,14 @@ def parse_args():
             action='count', default=0)
     parser.add_argument('-l', '--log', dest='log',
             action='store_true', default=False)
+    parser.add_argument('-ra', '--rapatriate', dest='rapatriate',
+            action='store_true', default=False)
     args = parser.parse_args()
     if args.quiet:
         loglevel = logging.ERROR
     else:
         loglevel = logging.WARN - args.verbose * 10
-    return args.user, LOGFILE if args.log else None, loglevel
+    return args, LOGFILE if args.log else None, loglevel
 
 
 def set_logger(logfile=None, level=logging.INFO):
