@@ -26,8 +26,10 @@ def plan_construction(interface):
     planet = empire.idles.cheapest
     logger.warn('Will try to construct %r on %r'
             % (planet.to_construct, planet))
-    assert planet.to_construct.cost.movable < empire.capital.resources
-    assert planet.to_construct.cost.movable.total < empire.capital.fleet.capacity
+    assert planet.to_construct.cost.movable < empire.capital.resources, \
+            "Not enough ressources on capital"
+    assert planet.to_construct.cost.movable.total < \
+            empire.capital.fleet.capacity, "Fleet capacity too low on capital"
     travel_id = interface.send_resources(empire.capital, planet,
             resources=empire.cheapest.to_construct.cost)
 

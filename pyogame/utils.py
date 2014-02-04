@@ -15,7 +15,9 @@ def parse_args():
             action='count', default=0)
     parser.add_argument('-l', '--log', dest='log',
             action='store_true', default=False)
-    parser.add_argument('-ra', '--rapatriate', dest='rapatriate',
+    parser.add_argument('-r', '--rapatriate', dest='rapatriate',
+            action='store_true', default=False)
+    parser.add_argument('-c', '--construct', dest='construct',
             action='store_true', default=False)
     args = parser.parse_args()
     if args.quiet:

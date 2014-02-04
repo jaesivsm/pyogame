@@ -28,5 +28,7 @@ if __name__ == "__main__":
         session = Interface(conf[args.user])
     if args.rapatriate :
         scenarii.rapatriate(session)
+    if args.construct :
+        scenarii.plan_construction(session)
 
 # vim: set et sts=4 sw=4 tw=120:
