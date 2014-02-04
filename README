@@ -1,8 +1,14 @@
+########### UTILISATION ###########
+
+Lancer la commande : 
+    > python ogame.py account_key            * account_key doit être défini dans le fichier de conf
+
 ########### DEV ###########
 Installation de l'environnement de dev :
 
     * Paquets à installer
         > aptitude install python-selenium   * Installation du paquet de binding avec selenium
+        > aptitude install python-lxml       * Si non installé avec le paquet selenium
         > aptitude install python-dateutil   * Installation du paquet d'horodatage facilité
 
     * Server d'application selenium :
