@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 
-from pyogame import const
+from pyogame.tools import flags, const
 from pyogame.empire import empire
 
 logger = logging.getLogger(__name__)
@@ -33,7 +33,7 @@ def plan_construction(interface):
     travel_id = interface.send_resources(empire.capital, planet,
             resources=empire.cheapest.to_construct.cost)
 
-    planet.add_flag(const.WAITING_RES,
+    planet.add_flag(flags.WAITING_RES,
             {travel_id: empire.cheapest.to_construct.building_attr})
 
 

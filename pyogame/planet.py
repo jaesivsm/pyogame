@@ -1,6 +1,7 @@
 import logging
+import dateutil.parser
 
-from pyogame.const import Resources, IDLE, CAPITAL, WAITING_RES
+from pyogame.tools import Resources, flags
 from pyogame.fleet import Fleet
 from pyogame.constructions import MetalMine, CrystalMine, \
         DeuteriumSynthetizer, SolarPlant
@@ -10,27 +11,21 @@ logger = logging.getLogger(__name__)
 
 class Planet(object):
 
-    def __init__(self, name, coords, position):
+    def __init__(self, name, coords, position,
+            fleet=None, resources=None, **kwargs):
         self.name = name
         self.coords = coords
         self.position = position
         self._flags = {}
 
-        self.fleet = Fleet()
-        self.resources = Resources()
+        self.fleet = fleet if fleet is not None else Fleet()
+        self.resources = resources if resources is not None else Resources()
 
-        self.metal_mine = MetalMine()
-        self.crystal_mine = CrystalMine()
-        self.deuterium_synthetize = DeuteriumSynthetizer()
-        self.solar_plant = SolarPlant()
-
-    def __repr__(self):
-        return r"<%s %s>" % (self.name, self.coords)
-
-    def __eq__(self, other):
-        if isinstance(other, Planet) and other.coords == self.coords:
-            return True
-        return False
+        self.metal_mine = MetalMine(kwargs.get('metal_mine', 0))
+        self.crystal_mine = CrystalMine(kwargs.get('crystal_mine', 0))
+        self.deuterium_synthetize = DeuteriumSynthetizer(
+                kwargs.get('deuterium_synthetize', 0))
+        self.solar_plant = SolarPlant(kwargs.get('solar_plant', 0))
 
     def has_flag(self, flag):
         return flag in self._flags
@@ -63,11 +58,12 @@ class Planet(object):
 
     @property
     def is_idle(self):
-        return self.has_flag(IDLE) and not self.has_flag(WAITING_RES)
+        return self.has_flag(flags.IDLE) \
+                and not self.has_flag(flags.WAITING_RES)
 
     @property
     def is_capital(self):
-        return self.has_flag(CAPITAL)
+        return self.has_flag(flags.CAPITAL)
 
     @property
     def to_construct(self):
@@ -82,3 +78,36 @@ class Planet(object):
         if self.metal_mine.cost.energy > self.resources.energy:
             return self.solar_plant
         return self.metal_mine
+
+    @classmethod
+    def load(cls, **kwargs):
+        fleet = Fleet.load(*kwargs.pop('fleet'))
+        resources = Resources.load(**kwargs.pop('resources'))
+        pl_flags = kwargs.pop('flags')
+        obj = cls(fleet=fleet, resources=resources, **kwargs)
+        for flag, value in pl_flags.items():
+            if flag == flags.FLEET_ARRIVAL:
+                for uuid in value:
+                    value[uuid] = dateutil.parser.parse(value[uuid])
+            obj.add_flag(flag, value)
+        return obj
+
+    def dump(self):
+        return {'name': self.name,
+                'coords': self.coords,
+                'position': self.position,
+                'flags': self._flags,
+                'fleet': self.fleet.dump(),
+                'resources': self.resources.dump(),
+                'metal_mine': self.metal_mine.level,
+                'crystal_mine': self.crystal_mine.level,
+                'deuterium_synthetize': self.deuterium_synthetize.level,
+                'solar_plant': self.solar_plant.level}
+
+    def __repr__(self):
+        return r"<%s %s>" % (self.name, self.coords)
+
+    def __eq__(self, other):
+        if isinstance(other, Planet) and other.coords == self.coords:
+            return True
+        return False

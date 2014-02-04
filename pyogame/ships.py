@@ -21,6 +21,15 @@ class Ships(object):
     def copy(self):
         return self.__class__(self.ships_id, self.name, self.quantity)
 
+    @classmethod
+    def load(cls, **kwargs):
+        ships_cls = SHIPS_TYPES.get(kwargs.get('ships_id'), cls)
+        return ships_cls(**kwargs)
+
+    def dump(self):
+        return {'ships_id': self.ships_id,
+                'name': self.name, 'quantity': self.quantity}
+
     def __repr__(self):
         if self.name:
             return r"<%r(%d)>" % (self.name, self.quantity)

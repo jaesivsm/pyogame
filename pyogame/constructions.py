@@ -1,6 +1,6 @@
 import logging
 
-from pyogame.const import Resources
+from pyogame.tools.resources import Resources
 
 logger = logging.getLogger(__name__)
 

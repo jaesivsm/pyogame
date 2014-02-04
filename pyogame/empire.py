@@ -1,17 +1,17 @@
-import json
 import logging
-import dateutil.parser
 from datetime import datetime
 
 from pyogame.fleet import Fleet
-from pyogame.const import Resources, RES_TYPES, FLEET_ARRIVAL
+from pyogame.planet import Planet
+from pyogame.tools import flags, resources
 
 logger = logging.getLogger(__name__)
 
 
 class PlanetCollection(object):
 
-    def __init__(self):
+    def __init__(self, capital_coords=None):
+        self.capital_coords = capital_coords
         self.planets = {}
         self.filters = {}
         self.__cache = []
@@ -37,6 +37,8 @@ class PlanetCollection(object):
 
     def add(self, planet):
         self.planets[planet.position] = planet
+        if self.capital_coords and self.capital_coords == planet.coords:
+            planet.add_flag(flags.CAPITAL)
 
     def _filter(self, *args, **kwargs):
         pl_col = PlanetCollection()
@@ -85,11 +87,11 @@ class PlanetCollection(object):
 
     @property
     def resources(self):
-        resources = Resources()
+        res = resources.Resources()
         for planet in self:
-            for res_type in RES_TYPES:
-                resources[res_type] += planet.resources[res_type]
-        return resources
+            for res_type, amount in planet.resources.movable:
+                res[res_type] += amount
+        return res
 
     @property
     def cheapest(self):
@@ -102,19 +104,12 @@ class PlanetCollection(object):
                 cheapest = planet
         return cheapest
 
+    def load(self, **kwargs):
+        for planet_dict in kwargs['planets']:
+            self.add(Planet.load(**planet_dict))
 
-    def loads_flags(self, cache):
-        for position, flags in json.loads(cache).items():
-            for flag, value in flags.items():
-                if flag == FLEET_ARRIVAL:
-                    for uuid in value:
-                        value[uuid] = dateutil.parser.parse(value[uuid])
-                empire.planets[int(position)].add_flag(flag, value)
-
-    def dumps_flags(self):
-        handler = lambda o: o.isoformat() if isinstance(o, datetime) else None
-        return json.dumps({planet.position: planet._flags for planet in self},
-                default=handler)
+    def dump(self):
+        return {'planets': [planet.dump() for planet in self]}
 
     def __len__(self):
         return len(self.__cache)

@@ -1,15 +1,4 @@
-__pages = {
-        'fleet': {'fr': 'Flotte'},
-        'resources': {'fr': 'Ressources'},
-}
 RES_TYPES = ['deuterium', 'crystal', 'metal', 'energy']
-CACHE_PATH = 'planets.flags'
-
-# Flags
-IDLE = 'IDLE'
-CAPITAL = 'CAPITAL'
-WAITING_RES = 'WAITING_RES'
-FLEET_ARRIVAL = 'FLEET_ARRIVAL'
 
 
 class Resources(object):
@@ -29,6 +18,14 @@ class Resources(object):
         res = Resources(self.metal, self.crystal, self.deuterium)
         del res.energy
         return res
+
+    @classmethod
+    def load(cls, **resources):
+        return cls(**resources)
+
+    def dump(self):
+        return {'metal': self.metal, 'crystal': self.crystal,
+                'deuterium': self.deuterium, 'energy': self.energy}
 
     def __iter__(self):
         for res_type, amount in self.__dict__.items():
@@ -59,20 +56,4 @@ class Resources(object):
                 % (self.metal, self.crystal, self.deuterium)
 
 
-class Collection(object):
 
-    def __init__(self, dictionnary, lang='fr'):
-        self.lang = lang
-        self.dictionnary = {}
-        for key in dictionnary:
-            self.dictionnary[key] = dictionnary[key][lang]
-            self.dictionnary[dictionnary[key][lang]] = key
-
-    def __getitem__(self, *args, **kwargs):
-        return self.dictionnary.__getitem__(*args, **kwargs)
-
-    def get(self, *args, **kwargs):
-        return self.dictionnary.get(*args, **kwargs)
-
-
-PAGES = Collection(__pages)

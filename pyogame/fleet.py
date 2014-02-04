@@ -1,6 +1,6 @@
 import logging
 
-from pyogame.ships import SHIPS_TYPES, Ships
+from pyogame.ships import Ships
 
 logger = logging.getLogger(__name__)
 
@@ -26,10 +26,9 @@ class Fleet(object):
                 fleet.add(ships=ships)
         return fleet
 
-    def add(self, ships_id=0, ships=None, *args, **kwargs):
+    def add(self, ships_id=0, ships=None, **kwargs):
         if ships is None:
-            ships_type = SHIPS_TYPES.get(ships_id, Ships)
-            ships = ships_type(ships_id, *args, **kwargs)
+            ships = Ships.load(ships_id=ships_id, **kwargs)
         if isinstance(ships, Ships) and ships.quantity:
             if not ships.ships_id in self._ships:
                 self._ships[ships.ships_id] = ships.copy()
@@ -52,6 +51,16 @@ class Fleet(object):
                 return fleet
             fleet.add(ships=ships)
             tmp_quantity -= ships.capacity
+
+    @classmethod
+    def load(cls, *args):
+        fleet = cls()
+        for ships in args:
+            fleet.add(**ships)
+        return fleet
+
+    def dump(self):
+        return [ships.dump() for ships in self._ships.values()]
 
     def __len__(self):
         return sum([ships.quantity for ships in self])
