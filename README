@@ -1,8 +1,9 @@
 ########### DEV ###########
 Installation de l'environnement de dev :
 
-    * Installation du paquet de binding avec selenium
-        > aptitude install python-selenium
+    * Paquets à installer
+        > aptitude install python-selenium   * Installation du paquet de binding avec selenium
+        > aptitude install python-dateutil   * Installation du paquet d'horodatage facilité
 
     * Server d'application selenium :
         > wget http://selenium.googlecode.com/files/selenium-server-standalone-2.25.0.jar
