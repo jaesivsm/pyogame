@@ -27,15 +27,16 @@ class Interface(selenium):
                     "least own the following keys: " + ", ".join(needed)
         self.__capital_crds = conf_dict.get('capital')
 
-        selenium.__init__(self,
-                "localhost", 4444, "*chrome", "http://ogame.fr/")
+        url = "http://%s.ogame.gameforge.com/" % conf_dict.get('lang', 'fr')
+
+        selenium.__init__(self, "localhost", 4444, "*chrome", url)
         self.current_planet = None
         self.current_page = None
         self.crawled = False
         self.start()
 
         logger.info('Logging in with identity %r' % conf_dict['user'])
-        self.open(conf_dict['login_page'])
+        self.open(url)
         self.click("id=loginBtn")
         self.select("id=serverLogin", "label=%s" % conf_dict['univers'])
         self.type("id=usernameLogin", conf_dict['user'])
