@@ -26,15 +26,15 @@ class Fleet(object):
                 fleet.add(ships=ships)
         return fleet
 
-    def add(self, ships_name='', quantity=0, ships=None):
-        if ships_name and quantity:
-            ships_type = SHIPS_TYPES.get(ships_name.lower(), Ships)
-            ships = ships_type(ships_name, quantity)
+    def add(self, ships_id=0, ships=None, *args, **kwargs):
+        if ships is None:
+            ships_type = SHIPS_TYPES.get(ships_id, Ships)
+            ships = ships_type(ships_id, *args, **kwargs)
         if isinstance(ships, Ships) and ships.quantity:
-            if not ships.name.lower() in self._ships:
-                self._ships[ships.name.lower()] = ships.copy()
+            if not ships.ships_id in self._ships:
+                self._ships[ships.ships_id] = ships.copy()
             else:
-                self._ships[ships.name.lower()].quantity += ships.quantity
+                self._ships[ships.ships_id].quantity += ships.quantity
 
     def for_moving(self, quantity):
         fleet, tmp_quantity = Fleet(), quantity
@@ -42,11 +42,13 @@ class Fleet(object):
                 ' %r with capacity %r' % (quantity, self, self.capacity)
         cmp_func = lambda x,y: cmp(x.capacity, y.capacity)
         for ships in sorted(self, cmp=cmp_func, reverse=True):
+            ships = ships.copy()
             if ships.capacity >= tmp_quantity:
                 nb_ships = tmp_quantity / ships.single_ship_capacity
                 if tmp_quantity % ships.single_ship_capacity:
                     nb_ships += 1
-                fleet.add(ships.name, nb_ships)
+                ships.quantity = nb_ships
+                fleet.add(ships=ships)
                 return fleet
             fleet.add(ships=ships)
             tmp_quantity -= ships.capacity

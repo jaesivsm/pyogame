@@ -84,17 +84,23 @@ class Interface(selenium):
         planet, page = self.go_to(planet, PAGES['fleet'], update=False)
         logger.debug('updating fleet states on %r' % planet)
         planet.fleet.clear()
+        source = html.fromstring(self.get_html_source())
         for fleet_type in ('military', 'civil'):
-            try:
-                for fleet in self.__split_text("//ul[@id='%s']" % fleet_type):
-                    name, quantity = fleet.strip().rsplit(' ', 1)
-                    planet.fleet.add(name.encode('utf8'), int(quantity))
-            except Exception, error:
-                if "//ul[@id='" in str(error) and "not found" in str(error):
-                    logger.debug('No %s fleet on %r' % (fleet_type, planet))
+            fleet = source.xpath("//ul[@id='%s']" % fleet_type)
+            if len(fleet) < 1:
+                logger.debug('No %s fleet on %r' % (fleet_type, planet))
+                continue
+            for ships in fleet[0]:
+                ships_id = ships.get('id')
+                if 'button' in ships_id:
+                    ships_id = int(ships_id[-3:])
+                cls = ships.find_class('level')
+                if len(cls) < 1:
                     continue
-                logger.error("ERROR: Couldn't update fleet states")
-                raise error
+                ships_str = cls[0].text_content().split()
+                planet.fleet.add(ships_id,
+                        name=' '.join(ships_str[:-1]),
+                        quantity=int(ships_str[-1]))
         logger.debug('%s got fleet %s' % (planet, planet.fleet))
 
     def update_flags(self):
@@ -118,8 +124,6 @@ class Interface(selenium):
                         if travel_id in planet.get_flag(WAITING_RES):
                             construct = planet.get_flag(WAITING_RES)[travel_id]
                         to_dels.append(travel_id)
-                import ipdb
-                ipdb.set_trace()
                 for to_del in to_dels:
                     planet.del_flag_key(FLEET_ARRIVAL, to_del)
                     planet.del_flag_key(WAITING_RES, to_del)
@@ -211,7 +215,7 @@ class Interface(selenium):
                 self.click(ships.xpath)
         else:
             for ships in src.fleet.transports.for_moving(resources.total):
-                self.type('id=%s' % ships.ship_id, ships.quantity)
+                self.type('id=ship_%d' % ships.ships_id, ships.quantity)
 
         self.click("css=#continue > span")
         self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
