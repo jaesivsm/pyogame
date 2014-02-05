@@ -36,7 +36,8 @@ def plan_construction(interface):
     planet.add_flag(flags.WAITING_RES,
             {travel_id: empire.cheapest.to_construct.building_attr})
 
-
 def resources_reception_and_construction(interface):
     pass
 
+def probe_inactives() :
+    pass
