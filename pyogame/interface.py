@@ -168,7 +168,7 @@ class Interface(selenium):
             self.go_to(planet, 'resources', update=False)
         if not isinstance(construction, Constructions):
             construction = getattr(planet, construction)
-        self.click(construction.css_dom)
+        self.click('"'+construction.css_dom+'"')
 
     def go_to(self, planet=None, page=None, update=True):
         if planet is not None and self.current_planet is not planet:

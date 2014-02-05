@@ -21,6 +21,8 @@ def parse_args():
             action='store_true', default=False)
     parser.add_argument('-p', '--probes', dest='probes',
             action='store_true', default=False)
+    parser.add_argument('-b', '--build', dest='build',
+            action='store', default=False)
     args = parser.parse_args()
     if args.quiet:
         loglevel = logging.ERROR
