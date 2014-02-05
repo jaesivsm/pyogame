@@ -6,19 +6,18 @@ import time
 import logging
 from lxml import html
 from uuid import uuid4
-from selenium import selenium
+from selenium import selenium, webdriver
 from datetime import timedelta, datetime
 
 from pyogame.empire import empire
 from pyogame.planet import Planet
 from pyogame.constructions import Constructions
 from pyogame.tools import flags
-from pyogame.tools.const import PAGES, CACHE_PATH
+from pyogame.tools.const import CACHE_PATH
 from pyogame.tools.resources import RES_TYPES
 
 logger = logging.getLogger(__name__)
 DEFAULT_WAIT_TIME = 40000
-
 
 class Interface(selenium):
 
@@ -47,6 +46,7 @@ class Interface(selenium):
         self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
         time.sleep(1)
+        self.server_url = selenium.get_location(self).split('?')[0]
         if not self.load():
             self.discover()
         self.update_flags()
@@ -71,7 +71,7 @@ class Interface(selenium):
             logger.exception("ERROR: Couldn't update resources")
 
     def update_planet_buildings(self, planet=None):
-        planet, page = self.go_to(planet, PAGES['resources'], update=False)
+        planet, page = self.go_to(planet, 'resources', update=False)
         logger.debug('updating buildings states for %r' % planet)
         buildings = ['metal_mine', 'crystal_mine', 'deuterium_synthetize',
                 'solar_plant']
@@ -84,7 +84,7 @@ class Interface(selenium):
             building.level = int(ele.text_content().split()[-1])
 
     def update_planet_fleet(self, planet=None):
-        planet, page = self.go_to(planet, PAGES['fleet'], update=False)
+        planet, page = self.go_to(planet, 'fleet1', update=False)
         logger.debug('updating fleet states on %r' % planet)
         planet.fleet.clear()
         source = html.fromstring(self.get_html_source())
@@ -149,7 +149,7 @@ class Interface(selenium):
 
     def crawl(self, building=False, fleet=False):
         for planet in empire:
-            if self.current_page == PAGES['fleet']:
+            if self.current_page == 'fleet1':
                 if fleet:
                     self.update_planet_fleet(planet)
                 if building:
@@ -164,8 +164,8 @@ class Interface(selenium):
 
     def construct(self, construction, planet=None):
         planet = planet if planet is not None else self.current_planet
-        if self.current_page != PAGES['resources']:
-            self.go_to(planet, PAGES['resources'], update=False)
+        if self.current_page != 'resources':
+            self.go_to(planet, 'resources', update=False)
         if not isinstance(construction, Constructions):
             construction = getattr(planet, construction)
         self.click(construction.css_dom)
@@ -179,22 +179,23 @@ class Interface(selenium):
 
         if page is not None and self.current_page != page:
             logger.info('Going to page %r' % page)
-            self.click("link=%s" % page)
+            page = self.server_url + '?page=' + page
+            self.click("css=a[href=\"%s\"]" % page)
             self.current_page = page
             self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
         if update:
             self.update_planet_resources(planet)
-            if self.current_page == PAGES['resources']:
+            if self.current_page == 'resources':
                 self.update_planet_resources(planet)
-            elif self.current_page == PAGES['fleet']:
+            elif self.current_page == 'fleet1':
                 self.update_planet_fleet(planet)
         return self.current_planet, self.current_page
 
     def send_resources(self, src, dst, all_ships=False, resources=None):
         logger.warn('Moving %r from %r to %r'
                 % (resources if resources else 'all resources', src, dst))
-        self.go_to(src, PAGES['fleet'])
+        self.go_to(src, 'fleet1')
         travel_id = str(uuid4())
         if not src.fleet.transports:
             logger.warn("No ships on %r, can't move resources" % src)

@@ -30,5 +30,7 @@ if __name__ == "__main__":
         scenarii.rapatriate(session)
     if args.construct :
         scenarii.plan_construction(session)
+    if args.probes :
+        scenarii.probe_inactives(session)
 
 # vim: set et sts=4 sw=4 tw=120:
