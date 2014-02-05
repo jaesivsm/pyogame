@@ -2,7 +2,7 @@ __pages = {
         'fleet': {'fr': 'Flotte'},
         'resources': {'fr': 'Ressources'},
 }
-CACHE_PATH = 'planets.flags'
+CACHE_PATH = 'empire.cache'
 
 
 class Collection(object):

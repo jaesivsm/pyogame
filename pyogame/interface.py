@@ -6,13 +6,13 @@ import time
 import logging
 from lxml import html
 from uuid import uuid4
-from selenium import selenium, webdriver
+from selenium import selenium
 from datetime import timedelta, datetime
 
 from pyogame.empire import empire
 from pyogame.planet import Planet
+from pyogame.fleet import FlyingFleet
 from pyogame.constructions import Constructions
-from pyogame.tools import flags
 from pyogame.tools.const import CACHE_PATH
 from pyogame.tools.resources import RES_TYPES
 
@@ -49,7 +49,7 @@ class Interface(selenium):
         self.server_url = selenium.get_location(self).split('?')[0]
         if not self.load():
             self.discover()
-        self.update_flags()
+        self.update_empire_overall()
 
     def __del__(self):
         self.dump()
@@ -106,32 +106,22 @@ class Interface(selenium):
                         quantity=int(ships_str[-1]))
         logger.debug('%s got fleet %s' % (planet, planet.fleet))
 
-    def update_flags(self):
+    def update_empire_overall(self):
         logger.debug('updating flags')
-        now = datetime.now()
-        empire.del_flags(flags.IDLE)
         source = html.fromstring(self.get_html_source())
         planets_list = source.xpath("//div[@id='planetList']")[0]
         for position, elem in enumerate(planets_list):
             if not elem.find_class('icon_wrench'):
-                empire.planets[position + 1].add_flag(flags.IDLE)
-        for planet in empire:
-            if not planet.has_flag(flags.WAITING_RES):
-                planet.del_flag(flags.FLEET_ARRIVAL)
-            construct = None
-            if planet.has_flag(flags.FLEET_ARRIVAL):
-                to_dels = []
-                for travel_id, date \
-                        in planet.get_flag(flags.FLEET_ARRIVAL).items():
-                    if date < now:
-                        if travel_id in planet.get_flag(flags.WAITING_RES):
-                            construct = planet.get_flag(flags.WAITING_RES)[travel_id]
-                        to_dels.append(travel_id)
-                for to_del in to_dels:
-                    planet.del_flag_key(flags.FLEET_ARRIVAL, to_del)
-                    planet.del_flag_key(flags.WAITING_RES, to_del)
-                if construct and not planet.get_flag(flags.WAITING_RES):
-                    self.construct(getattr(planet, construct), planet)
+                empire.planets[position + 1].idle = True
+            else:
+                empire.planets[position + 1].idle = False
+        to_dels = []
+        for travel_id, flying_fleet in empire.flying_fleets.items():
+            if not travel_id in empire.waiting_for:
+                to_dels.append(travel_id)
+                continue
+        for to_del in to_dels:
+            del empire.flying_fleets[to_del]
 
     def discover(self):
         logger.info('Getting list of colonized planets')
@@ -201,12 +191,17 @@ class Interface(selenium):
             logger.warn("No ships on %r, can't move resources" % src)
             return
 
+        flying_fleet = FlyingFleet(src.position, dst.position)
         if all_ships:
             for ships in src.fleet.transports:
                 self.click(ships.xpath)
+                flying_fleet.add(ships=ships)
+            src.fleet.clear()
         else:
             for ships in src.fleet.transports.for_moving(resources.total):
                 self.type('id=ship_%d' % ships.ships_id, ships.quantity)
+                flying_fleet.add(ships=ships)
+                src.fleet.remove(ships=ships)
 
         self.click("css=#continue > span")
         self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
@@ -227,15 +222,19 @@ class Interface(selenium):
         time.sleep(1)
         day, month, year, hour, minute, second = [int(i) for i in
                 re.split('[\.: ]', self.get_text("//span[@id='arrivalTime']"))]
-        arrival = datetime(year + 2000, month, day, hour, minute, second)
-        arrival = arrival + timedelta(seconds=60)
-        logger.info('Resources will be arriving at %s' % arrival)
-        dst.add_flag(flags.FLEET_ARRIVAL, {travel_id: arrival})
+        arrival_time = datetime(year + 2000, month, day, hour, minute, second)
+        day, month, year, hour, minute, second = [int(i) for i in
+                re.split('[\.: ]', self.get_text("//span[@id='returnTime']"))]
+        return_time = datetime(year + 2000, month, day, hour, minute, second)
+        logger.info('Resources will be arriving at %s' % arrival_time)
+        flying_fleet.arrival_time = arrival_time
+        flying_fleet.return_time = return_time
 
         self.click("css=#start > span")
         self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
         self.current_page = None
         self.update_planet_fleet(src)
+        empire.flying_fleets[travel_id] = flying_fleet
         return travel_id
 
     def load(self):

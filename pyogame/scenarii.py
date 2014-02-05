@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
+from datetime import datetime
 
-from pyogame.tools import flags, const
 from pyogame.empire import empire
 
 logger = logging.getLogger(__name__)
@@ -37,11 +37,30 @@ def plan_construction(interface):
     travel_id = interface.send_resources(empire.capital, planet,
             resources=empire.cheapest.to_construct.cost)
 
-    planet.add_flag(flags.WAITING_RES,
-            {travel_id: empire.cheapest.to_construct.building_attr})
+    planet.waiting_for[travel_id] = empire.cheapest.to_construct.building_attr
+
 
 def resources_reception_and_construction(interface):
-    pass
+    now = datetime.now()
+    to_dels, to_construct = [], {}
+
+    for travel_id, flying_fleet in empire.flying_fleets.items():
+        if flying_fleet['arrival_time'] < now:
+            continue
+        to_dels.append(travel_id)
+        planet = empire.planets[flying_fleet.to_pl]
+        to_construct[flying_fleet.to_pl] = planet.waiting_for[travel_id]
+        del planet.waiting_for[travel_id]
+
+    for to_del in to_dels:
+        del empire.flying_fleets[to_del]
+
+    for position, construct in to_construct.items():
+        planet = empire.planets[position]
+        if construct in planet.waiting_for.values():
+            continue  # waiting for other fleet
+        interface.construct(construct, planet)
+
 
 def probe_inactives(interface) :
     interface.go_to(empire.capital, 'fleet1')

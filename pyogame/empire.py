@@ -1,9 +1,8 @@
 import logging
-from datetime import datetime
 
 from pyogame.fleet import Fleet
 from pyogame.planet import Planet
-from pyogame.tools import flags, resources
+from pyogame.tools import resources
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +14,7 @@ class PlanetCollection(object):
         self.planets = {}
         self.filters = {}
         self.__cache = []
+        self.flying_fleets = {}
 
     def __iter__(self):
         class FilterFailed(Exception):
@@ -23,11 +23,7 @@ class PlanetCollection(object):
         for planet in self.planets.values():
             try:
                 for key in self.filters:
-                    if isinstance(key, (list, tuple)):
-                        call = getattr(planet, key[0])
-                        if call(*key[1:]) == self.filters[key]:
-                            continue
-                    elif getattr(planet, key) == self.filters[key]:
+                    if getattr(planet, key) == self.filters[key]:
                         continue
                     raise FilterFailed()
                 self.__cache.append(planet)
@@ -38,7 +34,7 @@ class PlanetCollection(object):
     def add(self, planet):
         self.planets[planet.position] = planet
         if self.capital_coords and self.capital_coords == planet.coords:
-            planet.add_flag(flags.CAPITAL)
+            planet.capital = True
 
     def _filter(self, *args, **kwargs):
         pl_col = PlanetCollection()
@@ -52,7 +48,7 @@ class PlanetCollection(object):
 
     @property
     def colonies(self):
-        return self._filter(is_capital=False)
+        return self._filter(capital=False)
 
     @property
     def idles(self):
@@ -62,20 +58,13 @@ class PlanetCollection(object):
     def with_fleet(self):
         return self._filter(is_fleet_empty=False)
 
-    def has_flag(self, flag):
-        return self._filter({('has_flag', flag): True})
-
-    def has_no_flag(self, flag):
-        return self._filter({('has_flag', flag): False})
-
-    def del_flags(self, flag):
-        for planet in self:
-            if flag in planet._flags:
-                del planet._flags[flag]
+    @property
+    def waiting(self):
+        return self._filter(is_waiting=True)
 
     @property
     def capital(self):
-        return list(self._filter(is_capital=True))[0]
+        return list(self._filter(capital=True))[0]
 
     @property
     def fleet(self):
@@ -94,8 +83,15 @@ class PlanetCollection(object):
         return res
 
     @property
+    def waiting_for(self):
+        waiting_for = {}
+        for planet in empire:
+            waiting_for.update(planet.waiting_for)
+        return waiting_for
+
+    @property
     def cheapest(self):
-        "return the planet with the cheapest construction of the given type"
+        "return the planet with the cheapest construction of any type"
         cheapest = None
         for planet in self:
             if not cheapest:
@@ -105,11 +101,13 @@ class PlanetCollection(object):
         return cheapest
 
     def load(self, **kwargs):
-        for planet_dict in kwargs['planets']:
+        for planet_dict in kwargs.get('planets', {}):
             self.add(Planet.load(**planet_dict))
+        self.flying_fleets = kwargs.get('flying_fleets', {})
 
     def dump(self):
-        return {'planets': [planet.dump() for planet in self]}
+        return {'planets': [planet.dump() for planet in self],
+                'flying_fleets': self.flying_fleets}
 
     def __len__(self):
         return len(self.__cache)

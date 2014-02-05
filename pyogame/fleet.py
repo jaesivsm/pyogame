@@ -35,6 +35,14 @@ class Fleet(object):
             else:
                 self._ships[ships.ships_id].quantity += ships.quantity
 
+    def remove(self, ships_id=0, ships=None, **kwargs):
+        if ships is None:
+            ships = self.__class__.load(ships_id=ships_id, **kwargs)
+        if ships.quantity:
+            self._ships[ships.ships_id].quantity -= ships.quantity
+        if self._ships[ships.ships_id].quantity <= 0:
+            del self._ships[ships.ships_id]
+
     def for_moving(self, quantity):
         fleet, tmp_quantity = Fleet(), quantity
         assert self.capacity >= quantity, 'Too many resources (%r) for fleet' \
@@ -67,3 +75,16 @@ class Fleet(object):
 
     def __repr__(self):
         return repr(','.join([repr(ships) for ships in self]))
+
+
+class FlyingFleet(Fleet):
+
+    def __init__(self, from_pl, to_pl, arrival_time=None, return_time=None):
+        super(FlyingFleet, self).__init__()
+        self.from_pl = from_pl
+        self.to_pl = to_pl
+        self.arrival_time = arrival_time
+        self.return_time = return_time
+
+    def __repr__(self):
+        return r'<Fleet (%r->%r)>' % (self.from_pl, self.to_pl)

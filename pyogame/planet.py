@@ -1,7 +1,7 @@
 import logging
 import dateutil.parser
 
-from pyogame.tools import Resources, flags
+from pyogame.tools import Resources
 from pyogame.fleet import Fleet
 from pyogame.constructions import MetalMine, CrystalMine, \
         DeuteriumSynthetizer, SolarPlant
@@ -11,15 +11,16 @@ logger = logging.getLogger(__name__)
 
 class Planet(object):
 
-    def __init__(self, name, coords, position,
-            fleet=None, resources=None, **kwargs):
+    def __init__(self, name, coords, position, **kwargs):
         self.name = name
         self.coords = coords
         self.position = position
-        self._flags = {}
+        self.idle = kwargs.get('idle', False)
+        self.capital = kwargs.get('capital', False)
+        self.waiting_for = kwargs.get('waiting_for', {})
 
-        self.fleet = fleet if fleet is not None else Fleet()
-        self.resources = resources if resources is not None else Resources()
+        self.fleet = kwargs.get('fleet', Fleet())
+        self.resources = kwargs.get('resources', Resources())
 
         self.metal_mine = MetalMine(kwargs.get('metal_mine', 0))
         self.crystal_mine = CrystalMine(kwargs.get('crystal_mine', 0))
@@ -27,43 +28,17 @@ class Planet(object):
                 kwargs.get('deuterium_synthetize', 0))
         self.solar_plant = SolarPlant(kwargs.get('solar_plant', 0))
 
-    def has_flag(self, flag):
-        return flag in self._flags
-
-    def add_flag(self, flag, value=True):
-        if not self.has_flag(flag):
-            self._flags[flag] = value
-        if self.has_flag(flag) and type(value) is dict \
-                and type(self._flags[flag]) is dict:
-            self._flags[flag].update(value)
-
-    def del_flag(self, flag):
-        if self.has_flag(flag):
-            del self._flags[flag]
-
-    def del_flag_key(self, flag, key):
-        if self.has_flag(flag) and key in self._flags[flag]:
-            self._flags[flag].pop(key)
-        if not self.get_flag(flag):
-            self.del_flag(flag)
-
-    def get_flag(self, flag, default=None):
-        if self.has_flag(flag):
-            return self._flags[flag]
-        return default
-
     @property
     def is_fleet_empty(self):
         return not bool(self.fleet)
 
     @property
     def is_idle(self):
-        return self.has_flag(flags.IDLE) \
-                and not self.has_flag(flags.WAITING_RES)
+        return self.idle and not self.waiting_for
 
     @property
-    def is_capital(self):
-        return self.has_flag(flags.CAPITAL)
+    def is_waiting(self):
+        return bool(self.waiting_for)
 
     @property
     def to_construct(self):
@@ -81,22 +56,22 @@ class Planet(object):
 
     @classmethod
     def load(cls, **kwargs):
-        fleet = Fleet.load(*kwargs.pop('fleet'))
-        resources = Resources.load(**kwargs.pop('resources'))
-        pl_flags = kwargs.pop('flags')
-        obj = cls(fleet=fleet, resources=resources, **kwargs)
-        for flag, value in pl_flags.items():
-            if flag == flags.FLEET_ARRIVAL:
-                for uuid in value:
-                    value[uuid] = dateutil.parser.parse(value[uuid])
-            obj.add_flag(flag, value)
-        return obj
+        kwargs['fleet'] = Fleet.load(*kwargs.get('fleet', []))
+        kwargs['waiting_for'] = kwargs.get('waiting_for', {})
+        kwargs['resources'] = Resources.load(**kwargs.get('resources', {}))
+        for value in kwargs['waiting_for'].values():
+            if 'arrival' in value:
+                value['arrival'] = dateutil.parser.parse(value['arrival'])
+            if 'return' in value:
+                value['return'] = dateutil.parser.parse(value['return'])
+        return cls(**kwargs)
 
     def dump(self):
         return {'name': self.name,
                 'coords': self.coords,
                 'position': self.position,
-                'flags': self._flags,
+                'waiting_for': self.waiting_for,
+                'capital': self.capital,
                 'fleet': self.fleet.dump(),
                 'resources': self.resources.dump(),
                 'metal_mine': self.metal_mine.level,

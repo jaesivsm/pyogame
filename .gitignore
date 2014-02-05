@@ -1,4 +1,4 @@
 conf.json
 venv/
 build/
-planets.flags
+empire.cache
