@@ -7,7 +7,7 @@ import logging
 from lxml import html
 from uuid import uuid4
 from selenium import selenium
-from datetime import timedelta, datetime
+from datetime import datetime
 
 from pyogame.empire import empire
 from pyogame.planet import Planet
@@ -157,8 +157,10 @@ class Interface(selenium):
         if self.current_page != 'resources':
             self.go_to(planet, 'resources', update=False)
         if not isinstance(construction, Constructions):
+            assert hasattr(planet, construction), \
+                    '%r has not %r' % (planet, construction)
             construction = getattr(planet, construction)
-        self.click('"'+construction.css_dom+'"')
+        self.click(construction.css_dom)
 
     def go_to(self, planet=None, page=None, update=True):
         if planet is not None and self.current_planet is not planet:

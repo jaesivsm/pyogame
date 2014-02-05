@@ -66,23 +66,15 @@ def probe_inactives(interface) :
     interface.go_to(empire.capital, 'fleet1')
     pass
 
+
 def specific_construction(interface, to_build) :
-    what, where = to_build.split('/')
-    notFound = True
-    for planet in empire:
-        if planet.name == where:
-            notFound = False
-            if what == 'M' :
-                construction = planet.metal_mine
-            elif what == 'C' :
-                construction = planet.crystal_mine
-            elif what == 'D' :
-                construction = planet.deuterium_synthetize
-            elif what == 'S' :
-                construction = planet.solar_plant
-            else:
-                logger.info('Please enter M, C, D or S to build')
-            interface.construct(construction, planet)
-    if notFound:
-        logger.info('Planet not found')
-    pass
+    position, construction = to_build.split('/')
+    try:
+        for planet in empire:
+            if planet.position == position:
+                interface.construct(construction, planet)
+                return True
+        logger.critical('No planet at position %r' % position)
+    except AssertionError, error:
+        logger.critical(str(error))
+    return False
