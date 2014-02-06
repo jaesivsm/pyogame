@@ -31,7 +31,7 @@ if __name__ == "__main__":
     if args.construct :
         scenarii.plan_construction(session)
     if args.probes :
-        scenarii.probe_inactives(session)
+        scenarii.probe_idles(session)
     if args.build :
         scenarii.specific_construction(session, args.build)
 
