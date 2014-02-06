@@ -71,6 +71,9 @@ def probe_idles(interface) :
 def attack_idles(interface) :
     pass
 
+def display_messages(interface) :
+    pass
+
 def specific_construction(interface, to_build) :
     position, construction = to_build.split('/')
     try:
@@ -81,4 +84,7 @@ def specific_construction(interface, to_build) :
         logger.critical('No planet at position %r' % position)
     except AssertionError, error:
         logger.critical(str(error))
+    return False
+
+def specific_research(interface, to_build) :
     return False
