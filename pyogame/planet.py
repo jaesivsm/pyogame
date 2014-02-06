@@ -1,5 +1,4 @@
 import logging
-import dateutil.parser
 
 from pyogame.tools import Resources
 from pyogame.fleet import Fleet
@@ -56,14 +55,8 @@ class Planet(object):
 
     @classmethod
     def load(cls, **kwargs):
-        kwargs['fleet'] = Fleet.load(*kwargs.get('fleet', []))
-        kwargs['waiting_for'] = kwargs.get('waiting_for', {})
+        kwargs['fleet'] = Fleet.load(**kwargs.get('fleet', {}))
         kwargs['resources'] = Resources.load(**kwargs.get('resources', {}))
-        for value in kwargs['waiting_for'].values():
-            if 'arrival' in value:
-                value['arrival'] = dateutil.parser.parse(value['arrival'])
-            if 'return' in value:
-                value['return'] = dateutil.parser.parse(value['return'])
         return cls(**kwargs)
 
     def dump(self):

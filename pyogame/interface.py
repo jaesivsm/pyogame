@@ -5,7 +5,6 @@ import json
 import time
 import logging
 from lxml import html
-from uuid import uuid4
 from selenium import selenium
 from datetime import datetime
 
@@ -113,13 +112,7 @@ class Interface(selenium):
         for position, elem in enumerate(planets_list):
             empire.planets[position + 1].idle = False \
                     if elem.find_class('icon_wrench') else True
-        to_dels = []
-        for travel_id, fleet in empire.flying_fleets.items():
-            if not travel_id in empire.waiting_for and fleet.is_returned:
-                to_dels.append(travel_id)
-                continue
-        for to_del in to_dels:
-            del empire.flying_fleets[to_del]
+        empire.missions.clean(empire.waiting_for)
 
     def discover(self):
         logger.info('Getting list of colonized planets')
@@ -185,21 +178,20 @@ class Interface(selenium):
         logger.warn('Moving %r from %r to %r'
                 % (resources if resources else 'all resources', src, dst))
         self.go_to(src, 'fleet1')
-        travel_id = str(uuid4())
         if not src.fleet.transports:
             logger.warn("No ships on %r, can't move resources" % src)
             return
 
-        flying_fleet = FlyingFleet(src.position, dst.position)
+        sent_fleet = FlyingFleet(src.position, dst.position)
         if all_ships:
             for ships in src.fleet.transports:
                 self.click(ships.xpath)
-                flying_fleet.add(ships=ships)
+                sent_fleet.add(ships=ships)
             src.fleet.clear()
         else:
             for ships in src.fleet.transports.for_moving(resources.total):
                 self.type('id=ship_%d' % ships.ships_id, ships.quantity)
-                flying_fleet.add(ships=ships)
+                sent_fleet.add(ships=ships)
                 src.fleet.remove(ships=ships)
 
         self.click("css=#continue > span")
@@ -226,15 +218,14 @@ class Interface(selenium):
                 re.split('[\.: ]', self.get_text("//span[@id='returnTime']"))]
         return_time = datetime(year + 2000, month, day, hour, minute, second)
         logger.info('Resources will be arriving at %s' % arrival_time)
-        flying_fleet.arrival_time = arrival_time
-        flying_fleet.return_time = return_time
+        sent_fleet.arrival_time = arrival_time
+        sent_fleet.return_time = return_time
 
         self.click("css=#start > span")
         self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
         self.current_page = None
         self.update_planet_fleet(src)
-        empire.flying_fleets[travel_id] = flying_fleet
-        return travel_id
+        return empire.missions.add(sent_fleet)
 
     def load(self):
         logger.debug('loading objects from cache')

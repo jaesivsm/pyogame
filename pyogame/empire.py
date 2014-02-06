@@ -1,6 +1,6 @@
 import logging
 
-from pyogame.fleet import Fleet
+from pyogame.fleet import Missions, Fleet
 from pyogame.planet import Planet
 from pyogame.tools import resources, common
 
@@ -12,7 +12,7 @@ class PlanetCollection(common.Collection):
     def __init__(self, capital_coords=None):
         self.capital_coords = capital_coords
         self.planets = {}
-        self.flying_fleets = {}
+        self.missions = Missions()
         super(PlanetCollection, self).__init__(self.planets)
 
     def add(self, planet):
@@ -77,10 +77,10 @@ class PlanetCollection(common.Collection):
     def load(self, **kwargs):
         for planet_dict in kwargs.get('planets', {}):
             self.add(Planet.load(**planet_dict))
-        self.flying_fleets = kwargs.get('flying_fleets', {})
+        self.missions = Missions.load(**kwargs['missions'])
 
     def dump(self):
         return {'planets': [planet.dump() for planet in self],
-                'flying_fleets': self.flying_fleets}
+                'missions': self.missions.dump()}
 
 empire = PlanetCollection()

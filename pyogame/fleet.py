@@ -1,7 +1,10 @@
 import logging
 import datetime
+import dateutil.parser
+from uuid import uuid4
 
 from pyogame.ships import Ships
+from pyogame.tools.common import Collection
 
 logger = logging.getLogger(__name__)
 
@@ -62,14 +65,15 @@ class Fleet(object):
             tmp_quantity -= ships.capacity
 
     @classmethod
-    def load(cls, *args):
-        fleet = cls()
-        for ships in args:
+    def load(cls, **kwargs):
+        ships_types = kwargs.pop('ships')
+        fleet = cls(**kwargs)
+        for ships in ships_types:
             fleet.add(**ships)
         return fleet
 
     def dump(self):
-        return [ships.dump() for ships in self._ships.values()]
+        return {'ships': [ships.dump() for ships in self._ships.values()]}
 
     def __len__(self):
         return sum([ships.quantity for ships in self])
@@ -80,19 +84,76 @@ class Fleet(object):
 
 class FlyingFleet(Fleet):
 
-    def __init__(self, from_pl, to_pl, arrival_time=None, return_time=None):
+    def __init__(self, from_pl, to_pl, travel_id=None,
+            arrival_time=None, return_time=None):
         super(FlyingFleet, self).__init__()
         self.from_pl = from_pl
         self.to_pl = to_pl
+        self.travel_id = travel_id if travel_id is not None else str(uuid4())
+        if arrival_time is not None \
+                and not isinstance(arrival_time, datetime.datetime):
+            arrival_time = dateutil.parser.parse(arrival_time)
+        if return_time is not None \
+                and not isinstance(return_time, datetime.datetime):
+            return_time = dateutil.parser.parse(return_time)
         self.arrival_time = arrival_time
         self.return_time = return_time
 
     @property
     def is_arrived(self):
-        return datetime.datetime.now() < self.arrival_time
+        return self.arrival_time < datetime.datetime.now()
 
+    @property
     def is_returned(self):
-        return datetime.datetime.now() < self.return_time
+        return self.return_time < datetime.datetime.now()
+
+    def dump(self):
+        dump = super(FlyingFleet, self).dump()
+        dump.update({'travel_id': self.travel_id,
+                'from_pl': self.from_pl, 'arrival_time': self.arrival_time,
+                'to_pl': self.to_pl, 'return_time': self.return_time,
+        })
+        return dump
 
     def __repr__(self):
-        return r'<Fleet (%r->%r)>' % (self.from_pl, self.to_pl)
+        return r'<Fleet %s (%r->%r)>' % (self.travel_id.split('-', 1)[0],
+                self.from_pl, self.to_pl)
+
+
+class Missions(Collection):
+
+    def __init__(self):
+        self.missions = {}
+        super(Missions, self).__init__(self.missions)
+
+    def add(self, fleet=None, **kwargs):
+        if fleet is None or not isinstance(fleet, Fleet):
+            fleet = FlyingFleet(**kwargs)
+        self.missions[fleet.travel_id] = fleet
+        return fleet.travel_id
+
+    def clean(self, awaited_travel=[]):
+        to_dels = []
+        for fleet in self.returned:
+            if not fleet.travel_id in awaited_travel:
+                to_dels.append(fleet)
+        for fleet in to_dels:
+            self.missions.pop(fleet.travel_id)
+
+    @property
+    def arrived(self):
+        return self._filter(is_arrived=True)
+
+    @property
+    def returned(self):
+        return self._filter(is_returned=True)
+
+    @classmethod
+    def load(cls, **kwargs):
+        missions = cls()
+        for mission in kwargs['missions']:
+            missions.add(FlyingFleet.load(**mission))
+        return missions
+
+    def dump(self):
+        return {'missions': [fleet.dump() for fleet in self]}

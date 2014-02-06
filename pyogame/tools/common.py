@@ -5,22 +5,16 @@ class FilterFailed(Exception):
 class Collection(object):
 
     def __init__(self, data_dict):
-        self.__cache = []
         self._data_dict = data_dict
         self._filters = {}
 
     def __iter__(self):
-        if self.__cache:
-            for cache_elem in self.__cache:
-                yield cache_elem
-            raise StopIteration()
         for item in self._data_dict.values():
             try:
                 for key in self._filters:
                     if getattr(item, key) == self._filters[key]:
                         continue
                     raise FilterFailed()
-                self.__cache.append(item)
                 yield item
             except FilterFailed:
                 pass
@@ -36,9 +30,7 @@ class Collection(object):
         return coll
 
     def __len__(self):
-        if not self.__cache:
-            list(self.__iter__())
-        return len(self.__cache)
+        return len(list(self.__iter__()))
 
     def __repr__(self):
         return repr(','.join([repr(item) for item in self]))

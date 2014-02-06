@@ -36,25 +36,32 @@ def plan_construction(interface):
     travel_id = interface.send_resources(empire.capital, planet,
             resources=empire.cheapest.to_construct.cost)
 
-    planet.waiting_for[travel_id] = empire.cheapest.to_construct.building_attr
+    planet.waiting_for[travel_id] = planet.to_construct.building_attr
 
 
 def resources_reception_and_construction(interface):
     waited_constructs = {}
 
-    for travel_id, fleet in empire.flying_fleets.items():
-        if not fleet.is_arrived or not travel_id in empire.waiting_for:
-            continue
+    for fleet in empire.missions.arrived:
+        if not fleet.travel_id in empire.waiting_for:
+            continue  # no one cares about this fleet
         planet = empire.planets[fleet.to_pl]
         if not planet.idle:  # construction has began
             continue
         if not fleet.to_pl in waited_constructs:
             waited_constructs[fleet.to_pl] = []
-        waited_constructs[fleet.to_pl].append(planet.waiting_for[travel_id])
+        # we list the constructions fleets have delivered resources for
+        waited_constructs[fleet.to_pl].append(
+                planet.waiting_for[fleet.travel_id])
 
     for planet in empire:
+        if not planet.position in waited_constructs:
+            continue
         for construct in set(waited_constructs[planet.position]):
+            # we count how many constructions resources
+            # have been delivered for on this planet
             waited_constr = waited_constructs[planet.position].count(construct)
+            # we count how many of this construction are waiting on this planet
             waited_travel = planet.waiting_for.values().count(construct)
             if waited_constr == waited_travel:
                 interface.construct(construct, planet)
