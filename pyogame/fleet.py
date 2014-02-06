@@ -1,4 +1,5 @@
 import logging
+import datetime
 
 from pyogame.ships import Ships
 
@@ -85,6 +86,13 @@ class FlyingFleet(Fleet):
         self.to_pl = to_pl
         self.arrival_time = arrival_time
         self.return_time = return_time
+
+    @property
+    def is_arrived(self):
+        return datetime.datetime.now() < self.arrival_time
+
+    def is_returned(self):
+        return datetime.datetime.now() < self.return_time
 
     def __repr__(self):
         return r'<Fleet (%r->%r)>' % (self.from_pl, self.to_pl)

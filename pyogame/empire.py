@@ -2,49 +2,23 @@ import logging
 
 from pyogame.fleet import Fleet
 from pyogame.planet import Planet
-from pyogame.tools import resources
+from pyogame.tools import resources, common
 
 logger = logging.getLogger(__name__)
 
 
-class PlanetCollection(object):
+class PlanetCollection(common.Collection):
 
     def __init__(self, capital_coords=None):
         self.capital_coords = capital_coords
         self.planets = {}
-        self.filters = {}
-        self.__cache = []
         self.flying_fleets = {}
-
-    def __iter__(self):
-        class FilterFailed(Exception):
-            pass
-        self.__cache = []
-        for planet in self.planets.values():
-            try:
-                for key in self.filters:
-                    if getattr(planet, key) == self.filters[key]:
-                        continue
-                    raise FilterFailed()
-                self.__cache.append(planet)
-                yield planet
-            except FilterFailed:
-                pass
+        super(PlanetCollection, self).__init__(self.planets)
 
     def add(self, planet):
         self.planets[planet.position] = planet
         if self.capital_coords and self.capital_coords == planet.coords:
             planet.capital = True
-
-    def _filter(self, *args, **kwargs):
-        pl_col = PlanetCollection()
-        pl_col.planets = self.planets
-        pl_col.filters.update(self.filters)
-        for arg in args:
-            if isinstance(arg, dict):
-                pl_col.filters.update(arg)
-        pl_col.filters.update(kwargs)
-        return pl_col
 
     @property
     def colonies(self):
@@ -108,11 +82,5 @@ class PlanetCollection(object):
     def dump(self):
         return {'planets': [planet.dump() for planet in self],
                 'flying_fleets': self.flying_fleets}
-
-    def __len__(self):
-        return len(self.__cache)
-
-    def __repr__(self):
-        return repr(','.join([repr(planet) for planet in self]))
 
 empire = PlanetCollection()

@@ -111,13 +111,11 @@ class Interface(selenium):
         source = html.fromstring(self.get_html_source())
         planets_list = source.xpath("//div[@id='planetList']")[0]
         for position, elem in enumerate(planets_list):
-            if not elem.find_class('icon_wrench'):
-                empire.planets[position + 1].idle = True
-            else:
-                empire.planets[position + 1].idle = False
+            empire.planets[position + 1].idle = False \
+                    if elem.find_class('icon_wrench') else True
         to_dels = []
-        for travel_id, flying_fleet in empire.flying_fleets.items():
-            if not travel_id in empire.waiting_for:
+        for travel_id, fleet in empire.flying_fleets.items():
+            if not travel_id in empire.waiting_for and fleet.is_returned:
                 to_dels.append(travel_id)
                 continue
         for to_del in to_dels:

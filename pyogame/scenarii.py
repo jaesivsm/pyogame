@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import logging
-from datetime import datetime
 
 from pyogame.empire import empire
 
@@ -41,25 +40,27 @@ def plan_construction(interface):
 
 
 def resources_reception_and_construction(interface):
-    now = datetime.now()
-    to_dels, to_construct = [], {}
+    waited_constructs = {}
 
-    for travel_id, flying_fleet in empire.flying_fleets.items():
-        if flying_fleet['arrival_time'] < now:
+    for travel_id, fleet in empire.flying_fleets.items():
+        if not fleet.is_arrived or not travel_id in empire.waiting_for:
             continue
-        to_dels.append(travel_id)
-        planet = empire.planets[flying_fleet.to_pl]
-        to_construct[flying_fleet.to_pl] = planet.waiting_for[travel_id]
-        del planet.waiting_for[travel_id]
+        planet = empire.planets[fleet.to_pl]
+        if not planet.idle:  # construction has began
+            continue
+        if not fleet.to_pl in waited_constructs:
+            waited_constructs[fleet.to_pl] = []
+        waited_constructs[fleet.to_pl].append(planet.waiting_for[travel_id])
 
-    for to_del in to_dels:
-        del empire.flying_fleets[to_del]
-
-    for position, construct in to_construct.items():
-        planet = empire.planets[position]
-        if construct in planet.waiting_for.values():
-            continue  # waiting for other fleet
-        interface.construct(construct, planet)
+    for planet in empire:
+        for construct in set(waited_constructs[planet.position]):
+            waited_constr = waited_constructs[planet.position].count(construct)
+            waited_travel = planet.waiting_for.values().count(construct)
+            if waited_constr == waited_travel:
+                interface.construct(construct, planet)
+                for travel_id, c in planet.waiting_for.items():
+                    if c == construct:
+                        del planet.waiting_for[travel_id]
 
 
 def probe_inactives(interface) :
