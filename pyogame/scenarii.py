@@ -78,7 +78,7 @@ def specific_construction(interface, to_build) :
     position, construction = to_build.split('/')
     try:
         for planet in empire:
-            if planet.position == position:
+            if planet.position == int(position):
                 interface.construct(construction, planet)
                 return True
         logger.critical('No planet at position %r' % position)
