@@ -17,7 +17,9 @@ if __name__ == "__main__":
     elif args.construct:
         scenarii.plan_construction(session)
     elif args.probes:
-        scenarii.probe_idles(session)
+        scenarii.probe_idles(session, args.idles)
+    elif args.idles :
+        scenarii.probe_idles(session, args.idles)
     elif args.build:
         scenarii.specific_construction(session, args.build)
     else:

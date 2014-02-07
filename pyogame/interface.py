@@ -246,6 +246,16 @@ class Interface(selenium):
         self.current_page = None
         return empire.missions.add(sent_fleet)
 
+    def check_galaxies(self, wideness = 0):
+        self.go_to(empire.capital, 'galaxy')
+        for i in range(1,17):
+            pseudo = self.get_table("galaxytable."+ str(i) +".7")
+            if pseudo.endswith('(i)') or pseudo.endswith('(I)'):
+                self.send_probe(interface, i)
+
+    def send_probe(interface, galaxy_position):
+        print galaxy_position
+
     def load(self):
         logger.debug('loading objects from cache')
         if not os.path.exists(CACHE_PATH):

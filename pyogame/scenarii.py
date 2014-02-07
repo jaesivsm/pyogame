@@ -95,9 +95,8 @@ def resources_reception_and_construction(interface):
                         del planet.waiting_for[travel_id]
 
 
-def probe_idles(interface) :
-    interface.go_to(empire.capital, 'galaxy')
-    interface.go_to(empire.capital, 'fleet1')
+def probe_idles(interface, range) :
+    interface.check_galaxies(range)
     pass
 
 def attack_idles(interface) :
