@@ -3,6 +3,7 @@ __pages = {
         'resources': {'fr': 'Ressources'},
 }
 CACHE_PATH = 'empire.cache'
+CONF_PATH = 'conf.json'
 
 
 class Collection(object):
