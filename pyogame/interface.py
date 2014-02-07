@@ -169,8 +169,7 @@ class Interface(selenium):
 
         if page is not None and self.current_page != page:
             logger.info('Going to page %r' % page)
-            page = self.server_url + '?page=' + page
-            self.click("css=a[href=\"%s\"]" % page)
+            self.click("css=a[href=\"%s?page=%s\"]" % (self.server_url, page))
             self.current_page = page
             self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
