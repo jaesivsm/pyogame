@@ -18,11 +18,13 @@ if __name__ == "__main__":
 
     if args.rapatriate:
         scenarii.rapatriate(session)
-    if args.construct:
+    elif args.construct:
         scenarii.plan_construction(session)
-    if args.probes:
+    elif args.probes:
         scenarii.probe_idles(session)
-    if args.build:
+    elif args.build:
         scenarii.specific_construction(session, args.build)
+    else:
+        scenarii.default_actions(session)
 
 # vim: set et sts=4 sw=4 tw=120:

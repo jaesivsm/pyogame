@@ -34,9 +34,19 @@ def plan_construction(interface):
     assert planet.to_construct.cost.movable.total < \
             empire.capital.fleet.capacity, "Fleet capacity too low on capital"
     travel_id = interface.send_resources(empire.capital, planet,
-            resources=empire.cheapest.to_construct.cost)
+            resources=planet.to_construct.cost)
 
     planet.waiting_for[travel_id] = planet.to_construct.building_attr
+
+
+def upgrade_empire(interface):
+    interface.crawl(building=True, fleet=True)
+    interface.update_empire_overall()
+    while True:
+        try:
+            plan_construction(interface)
+        except AssertionError:
+            break
 
 
 def resources_reception_and_construction(interface):
@@ -68,6 +78,14 @@ def resources_reception_and_construction(interface):
                 for travel_id, c in planet.waiting_for.items():
                     if c == construct:
                         del planet.waiting_for[travel_id]
+
+    interface.update_empire_overall()
+
+
+def default_actions(interface):
+    resources_reception_and_construction(interface)
+    rapatriate(interface)
+    upgrade_empire(interface)
 
 
 def probe_idles(interface) :
