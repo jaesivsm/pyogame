@@ -4,11 +4,7 @@
 Outil en ligne de commande pour inscrire des actions
 à exécuter ou pour les exécuter directement.
 """
-import logging
-
 from pyogame import utils, scenarii
-
-logger = logging.getLogger('pyogame')
 
 
 if __name__ == "__main__":
@@ -25,6 +21,9 @@ if __name__ == "__main__":
     elif args.build:
         scenarii.specific_construction(session, args.build)
     else:
-        scenarii.default_actions(session)
+        scenarii.resources_reception_and_construction(session)
+        scenarii.rapatriate(session)
+        scenarii.upgrade_empire(session)
+    session.dump()
 
 # vim: set et sts=4 sw=4 tw=120:

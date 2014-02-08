@@ -119,8 +119,9 @@ class Interface(selenium):
         source = html.fromstring(self.get_html_source())
         try:
             planets_list = source.xpath("//div[@id='planetList']")[0]
-        except IndexError:
-            logger.error("Couldn't get the planet list. Is your login page the right one? See configuration")
+        except IndexError:  # FIXME ugly, shouldn't be here, invoking exit bad
+            logger.error("Couldn't get the planet list. "
+                    "Is your login page the right one? See configuration")
             exit(1)
         for position, elem in enumerate(planets_list):
             name = elem.find_class('planet-name')[0].text.strip()
@@ -175,8 +176,6 @@ class Interface(selenium):
         return self.current_planet, self.current_page
 
     def send_resources(self, src, dst, all_ships=False, resources=None):
-        logger.warn('Moving %r from %r to %r'
-                % (resources if resources else 'all resources', src, dst))
         self.go_to(src, 'fleet1')
         if not src.fleet.transports:
             logger.warn("No ships on %r, can't move resources" % src)
@@ -217,7 +216,10 @@ class Interface(selenium):
         day, month, year, hour, minute, second = [int(i) for i in
                 re.split('[\.: ]', self.get_text("//span[@id='returnTime']"))]
         return_time = datetime(year + 2000, month, day, hour, minute, second)
-        logger.info('Resources will be arriving at %s' % arrival_time)
+
+        logger.warn('Moving %r from %r to %r arriving at %s'
+                % (resources if resources else 'all resources',
+                src, dst, arrival_time.isoformat()))
         sent_fleet.arrival_time = arrival_time
         sent_fleet.return_time = return_time
 

@@ -24,15 +24,23 @@ def rapatriate(interface, destination=None):
 
 def plan_construction(interface):
     planet = empire.idles.cheapest
-    if planet is None :
+    if planet is None:
         logger.info('All planets are constructing')
-        exit(1)
-    logger.warn('Will try to construct %r on %r'
-            % (planet.to_construct, planet))
+        return
+
+    if planet.resources > planet.to_construct.cost:
+        logger.warn('Resources are available on %r to construct %r'
+                % (planet, planet.to_construct))
+        interface.construct(planet.to_construct, planet)
+        return
+
     assert planet.to_construct.cost.movable < empire.capital.resources, \
             "Not enough ressources on capital"
     assert planet.to_construct.cost.movable.total < \
             empire.capital.fleet.capacity, "Fleet capacity too low on capital"
+
+    logger.warn('Sending resources to construct %r on %r'
+            % (planet.to_construct, planet))
     travel_id = interface.send_resources(empire.capital, planet,
             resources=planet.to_construct.cost)
 
@@ -61,7 +69,9 @@ def resources_reception_and_construction(interface):
         if not fleet.to_pl in waited_constructs:
             waited_constructs[fleet.to_pl] = []
         # we list the constructions fleets have delivered resources for
-        waited_constructs[fleet.to_pl].append(
+        logger.info('A fleet has arrived on %r to construct %r'
+                % (planet, planet.waiting_for[fleet.travel_id]))
+        waited_constructs[planet.position].append(
                 planet.waiting_for[fleet.travel_id])
 
     for planet in empire:
@@ -74,18 +84,15 @@ def resources_reception_and_construction(interface):
             # we count how many of this construction are waiting on this planet
             waited_travel = planet.waiting_for.values().count(construct)
             if waited_constr == waited_travel:
+                logger.warn("We're not waiting for any more fleet to construct"
+                        " %r on %r, launching construction."
+                        % (construct, planet))
                 interface.construct(construct, planet)
                 for travel_id, c in planet.waiting_for.items():
                     if c == construct:
                         del planet.waiting_for[travel_id]
 
     interface.update_empire_overall()
-
-
-def default_actions(interface):
-    resources_reception_and_construction(interface)
-    rapatriate(interface)
-    upgrade_empire(interface)
 
 
 def probe_idles(interface) :

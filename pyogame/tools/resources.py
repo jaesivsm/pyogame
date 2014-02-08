@@ -1,4 +1,4 @@
-RES_TYPES = ['deuterium', 'crystal', 'metal', 'energy']
+RES_TYPES = ['metal', 'crystal', 'deuterium', 'energy']
 
 
 class Resources(object):
@@ -52,8 +52,8 @@ class Resources(object):
         return 1
 
     def __repr__(self):
-        return r"<Resources(M%d,C%d,D%d)>" \
-                % (self.metal, self.crystal, self.deuterium)
-
-
-
+        output = []
+        for res_type in RES_TYPES:
+            if self[res_type]:
+                output.append("%s%d" % (res_type[0].upper(), self[res_type]))
+        return r"<Resources(%s)>" % r','.join(output)
