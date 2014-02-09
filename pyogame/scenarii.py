@@ -14,7 +14,6 @@ def rapatriate(interface, destination=None):
     logger.info('Launching rapatriation to %r' % destination)
     for source in empire:
         if destination is source:
-            logger.info('Destination is Source')
             continue
         interface.go_to(source, 'fleet1')
         if not source.fleet:
@@ -40,12 +39,12 @@ def plan_construction(interface):
 
 def upgrade_empire(interface):
     interface.crawl(building=True, fleet=True, station=True)
+    interface.update_empire_overall()
     for planet in empire.idles:
         if planet.resources > planet.to_construct.cost:
             logger.warn('Resources are available on %r to construct %r'
                     % (planet, planet.to_construct))
             interface.construct(planet.to_construct, planet)
-    interface.update_empire_overall()
     while True:
         try:
             plan_construction(interface)

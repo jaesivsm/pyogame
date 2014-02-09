@@ -11,7 +11,7 @@ from datetime import datetime
 from pyogame.empire import empire
 from pyogame.planet import Planet
 from pyogame.fleet import FlyingFleet
-from pyogame.constructions import BUILDINGS, STATIONS, Constructions
+from pyogame.constructions import BUILDINGS, Constructions
 from pyogame.tools.const import CACHE_PATH
 from pyogame.tools.resources import RES_TYPES
 
@@ -32,7 +32,6 @@ class Interface(selenium):
         selenium.__init__(self, "localhost", 4444, "*chrome", url)
         self.current_planet = None
         self.current_page = None
-        self.crawled = False
         self.start()
 
         logger.info('Logging in with identity %r' % conf_dict['user'])
@@ -70,8 +69,8 @@ class Interface(selenium):
             logger.exception("ERROR: Couldn't update resources")
 
     def _parse_constructions(self, page, planet=None, constructions=[]):
-        planet, page = self.go_to(planet, page, update=False)
         logger.debug('updating %s states for %r' % (page, planet))
+        planet, page = self.go_to(planet, page, update=False)
         source = html.fromstring(self.get_html_source())
         for pos, ele in enumerate(source.xpath("//span[@class='level']")):
             try:
@@ -80,13 +79,22 @@ class Interface(selenium):
                 continue
             building.level = int(ele.text_content().split()[-1])
 
-    def update_planet_buildings(self, planet=None):
-        self._parse_constructions('resources', planet, BUILDINGS)
+    def update_planet_buildings(self, planet=None, force=False):
+        planet = planet if planet else self.current_planet
+        if force or not planet.building_updated:
+            self._parse_constructions('resources', planet, BUILDINGS)
+            planet.building_updated = True
 
-    def update_planet_stations(self, planet=None):
-        self._parse_constructions('station', planet, STATIONS)
+    def update_planet_stations(self, planet=None, force=False):
+        planet = planet if planet else self.current_planet
+        if force or not planet.station_updated:
+            self._parse_constructions('station', planet, BUILDINGS)
+            planet.station_updated = True
 
-    def update_planet_fleet(self, planet=None):
+    def update_planet_fleet(self, planet=None, force=False):
+        planet = planet if planet else self.current_planet
+        if not force and planet.fleet_updated:
+            return
         planet, page = self.go_to(planet, 'fleet1', update=False)
         logger.debug('updating fleet states on %r' % planet)
         planet.fleet.clear()
@@ -108,6 +116,7 @@ class Interface(selenium):
                         name=' '.join(ships_str[:-1]),
                         quantity=int(ships_str[-1]))
         logger.debug('%s got fleet %s' % (planet, planet.fleet))
+        planet.fleet_updated = True
 
     def update_empire_overall(self):
         logger.debug('updating flags')
@@ -134,15 +143,15 @@ class Interface(selenium):
             empire.add(Planet(name, coords, position + 1))
 
     def crawl(self, building=False, station=False, fleet=False):
+        update_funcs = {'resources': self.update_planet_buildings,
+                'fleet1': self.update_planet_fleet,
+                'station': self.update_planet_stations}
         for planet in empire:
-            if fleet:
-                self.update_planet_fleet(planet)
-            if building:
-                self.update_planet_buildings(planet)
-            if station:
-                self.update_planet_stations(planet)
+            if self.current_page in update_funcs:
+                update_funcs[self.current_page](planet)
+            for func in update_funcs.values():
+                func(planet)
             self.update_planet_resources(planet)
-        self.crawled = True
 
     def construct(self, construction, planet=None):
         planet = planet if planet is not None else self.current_planet
@@ -230,7 +239,6 @@ class Interface(selenium):
         self.click("css=#start > span")
         self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
         self.current_page = None
-        self.update_planet_fleet(src)
         return empire.missions.add(sent_fleet)
 
     def load(self):

@@ -19,6 +19,9 @@ class Planet(object):
 
         self.fleet = kwargs.get('fleet', Fleet())
         self.resources = kwargs.get('resources', Resources())
+        self.station_updated = False
+        self.building_updated = False
+        self.fleet_updated = False
 
         for construction in BUILDINGS.values() + STATIONS.values():
             setattr(self, construction.name(),
