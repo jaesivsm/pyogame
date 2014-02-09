@@ -25,13 +25,6 @@ def rapatriate(interface, destination=None):
 def plan_construction(interface):
     planet = empire.idles.cheapest
     assert planet, 'All planets are constructing'
-
-    if planet.resources > planet.to_construct.cost:
-        logger.warn('Resources are available on %r to construct %r'
-                % (planet, planet.to_construct))
-        interface.construct(planet.to_construct, planet)
-        return
-
     assert planet.to_construct.cost.movable < empire.capital.resources, \
             "Not enough ressources on capital"
     assert planet.to_construct.cost.movable.total < \
@@ -47,6 +40,11 @@ def plan_construction(interface):
 
 def upgrade_empire(interface):
     interface.crawl(building=True, fleet=True, station=True)
+    for planet in empire.idles:
+        if planet.resources > planet.to_construct.cost:
+            logger.warn('Resources are available on %r to construct %r'
+                    % (planet, planet.to_construct))
+            interface.construct(planet.to_construct, planet)
     interface.update_empire_overall()
     while True:
         try:
