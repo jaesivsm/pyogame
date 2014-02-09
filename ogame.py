@@ -21,6 +21,8 @@ if __name__ == "__main__":
     elif args.build:
         scenarii.specific_construction(session, args.build)
     else:
+        session.crawl(building=True, fleet=True, station=True)
+        session.update_empire_overall()
         scenarii.resources_reception_and_construction(session)
         scenarii.rapatriate(session)
         scenarii.upgrade_empire(session)

@@ -12,10 +12,10 @@ def rapatriate(interface, destination=None):
     assert destination, "Empire has no capital " \
             "and no destination has been provided"
     logger.info('Launching rapatriation to %r' % destination)
+    interface.crawl(fleet=True)
     for source in empire:
         if destination is source:
             continue
-        interface.go_to(source, 'fleet1')
         if not source.fleet:
             continue
         interface.send_resources(source, destination, all_ships=True)
@@ -45,6 +45,7 @@ def upgrade_empire(interface):
             logger.warn('Resources are available on %r to construct %r'
                     % (planet, planet.to_construct))
             interface.construct(planet.to_construct, planet)
+
     while True:
         try:
             plan_construction(interface)
@@ -87,8 +88,6 @@ def resources_reception_and_construction(interface):
                 for travel_id, c in planet.waiting_for.items():
                     if c == construct:
                         del planet.waiting_for[travel_id]
-
-    interface.update_empire_overall()
 
 
 def probe_idles(interface) :

@@ -11,12 +11,13 @@ from datetime import datetime
 from pyogame.empire import empire
 from pyogame.planet import Planet
 from pyogame.fleet import FlyingFleet
-from pyogame.constructions import BUILDINGS, Constructions
+from pyogame.constructions import BUILDINGS, STATIONS, Constructions
 from pyogame.tools.const import CACHE_PATH
 from pyogame.tools.resources import RES_TYPES
 
 logger = logging.getLogger(__name__)
 DEFAULT_WAIT_TIME = 40000
+
 
 class Interface(selenium):
 
@@ -59,7 +60,7 @@ class Interface(selenium):
                 yield txt.strip()
 
     def update_planet_resources(self, planet=None):
-        planet = planet if planet is not None else self.current_planet
+        planet, page = self.go_to(planet, update=False)
         logger.debug('updating resources on planet %r' % planet)
         try:
             for res_type in RES_TYPES:
@@ -88,7 +89,7 @@ class Interface(selenium):
     def update_planet_stations(self, planet=None, force=False):
         planet = planet if planet else self.current_planet
         if force or not planet.station_updated:
-            self._parse_constructions('station', planet, BUILDINGS)
+            self._parse_constructions('station', planet, STATIONS)
             planet.station_updated = True
 
     def update_planet_fleet(self, planet=None, force=False):
@@ -143,15 +144,17 @@ class Interface(selenium):
             empire.add(Planet(name, coords, position + 1))
 
     def crawl(self, building=False, station=False, fleet=False):
-        update_funcs = {'resources': self.update_planet_buildings,
-                'fleet1': self.update_planet_fleet,
-                'station': self.update_planet_stations}
+        noc = lambda x: None
+        update_funcs = {
+                'resources': self.update_planet_buildings if building else noc,
+                'fleet1': self.update_planet_fleet if fleet else noc,
+                'station': self.update_planet_stations if station else noc,
+        }
         for planet in empire:
             if self.current_page in update_funcs:
                 update_funcs[self.current_page](planet)
             for func in update_funcs.values():
                 func(planet)
-            self.update_planet_resources(planet)
 
     def construct(self, construction, planet=None):
         planet = planet if planet is not None else self.current_planet
@@ -166,6 +169,7 @@ class Interface(selenium):
         self.go_to(planet, page, update=False)
         self.click(construction.css_dom)
         self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
+        self.update_empire_overall()
 
     def go_to(self, planet=None, page=None, update=True):
         if planet is not None and self.current_planet is not planet:
