@@ -2,8 +2,7 @@ import logging
 
 from pyogame.tools import Resources
 from pyogame.fleet import Fleet
-from pyogame.constructions import MetalMine, CrystalMine, \
-        DeuteriumSynthetizer, SolarPlant
+from pyogame.constructions import BUILDINGS, STATIONS
 
 logger = logging.getLogger(__name__)
 
@@ -21,11 +20,9 @@ class Planet(object):
         self.fleet = kwargs.get('fleet', Fleet())
         self.resources = kwargs.get('resources', Resources())
 
-        self.metal_mine = MetalMine(kwargs.get('metal_mine', 0))
-        self.crystal_mine = CrystalMine(kwargs.get('crystal_mine', 0))
-        self.deuterium_synthetize = DeuteriumSynthetizer(
-                kwargs.get('deuterium_synthetize', 0))
-        self.solar_plant = SolarPlant(kwargs.get('solar_plant', 0))
+        for construction in BUILDINGS.values() + STATIONS.values():
+            setattr(self, construction.name(),
+                    construction(kwargs.get(construction.name(), 0)))
 
     @property
     def is_fleet_empty(self):
@@ -39,19 +36,25 @@ class Planet(object):
     def is_waiting(self):
         return bool(self.waiting_for)
 
+    def time_to_construct(self, cost):
+        return (cost.metal + cost.crystal) \
+                / (2500 * (self.robot_factory.level + 1)
+                        * pow(2, self.nanite_factory.level))
+
     @property
     def to_construct(self):
-        if self.deuterium_synthetize.level < self.metal_mine.level - 4:
-            if self.deuterium_synthetize.cost.energy > self.resources.energy:
-                return self.solar_plant
-            return self.deuterium_synthetize
+        to_construct = self.metal_mine
+        if self.deuterium_synthetizer.level < self.metal_mine.level - 4:
+            to_construct = self.deuterium_synthetizer
         if self.crystal_mine.level < self.metal_mine.level - 2:
-            if self.crystal_mine.cost.energy > self.resources.energy:
-                return self.solar_plant
-            return self.crystal_mine
-        if self.metal_mine.cost.energy > self.resources.energy:
-            return self.solar_plant
-        return self.metal_mine
+            to_construct = self.crystal_mine
+        if to_construct.cost.energy > self.resources.energy:
+            to_construct = self.solar_plant
+        if self.time_to_construct(to_construct.cost) > 72:
+            if self.robot_factory.level >= 10:
+                return self.robot_factory
+            return self.nanite_factory
+        return to_construct
 
     @classmethod
     def load(cls, **kwargs):
@@ -60,17 +63,18 @@ class Planet(object):
         return cls(**kwargs)
 
     def dump(self):
-        return {'name': self.name,
+        dump = {'name': self.name,
                 'coords': self.coords,
                 'position': self.position,
                 'waiting_for': self.waiting_for,
                 'capital': self.capital,
                 'fleet': self.fleet.dump(),
                 'resources': self.resources.dump(),
-                'metal_mine': self.metal_mine.level,
-                'crystal_mine': self.crystal_mine.level,
-                'deuterium_synthetize': self.deuterium_synthetize.level,
-                'solar_plant': self.solar_plant.level}
+        }
+
+        for constru in BUILDINGS.values() + STATIONS.values():
+            dump[constru.name()] = getattr(self, constru.name()).level
+        return dump
 
     def __repr__(self):
         return r"<%s %s>" % (self.name, self.coords)

@@ -11,7 +11,7 @@ from datetime import datetime
 from pyogame.empire import empire
 from pyogame.planet import Planet
 from pyogame.fleet import FlyingFleet
-from pyogame.constructions import Constructions
+from pyogame.constructions import BUILDINGS, STATIONS, Constructions
 from pyogame.tools.const import CACHE_PATH
 from pyogame.tools.resources import RES_TYPES
 
@@ -69,18 +69,22 @@ class Interface(selenium):
         except Exception:
             logger.exception("ERROR: Couldn't update resources")
 
-    def update_planet_buildings(self, planet=None):
-        planet, page = self.go_to(planet, 'resources', update=False)
-        logger.debug('updating buildings states for %r' % planet)
-        buildings = ['metal_mine', 'crystal_mine', 'deuterium_synthetize',
-                'solar_plant']
+    def _parse_constructions(self, page, planet=None, constructions=[]):
+        planet, page = self.go_to(planet, page, update=False)
+        logger.debug('updating %s states for %r' % (page, planet))
         source = html.fromstring(self.get_html_source())
         for pos, ele in enumerate(source.xpath("//span[@class='level']")):
             try:
-                building = getattr(planet, buildings[pos])
-            except IndexError:
+                building = getattr(planet, constructions[pos].name())
+            except KeyError:
                 continue
             building.level = int(ele.text_content().split()[-1])
+
+    def update_planet_buildings(self, planet=None):
+        self._parse_constructions('resources', planet, BUILDINGS)
+
+    def update_planet_stations(self, planet=None):
+        self._parse_constructions('station', planet, STATIONS)
 
     def update_planet_fleet(self, planet=None):
         planet, page = self.go_to(planet, 'fleet1', update=False)
@@ -129,30 +133,30 @@ class Interface(selenium):
             coords = [int(coord) for coord in coords.split(':')]
             empire.add(Planet(name, coords, position + 1))
 
-    def crawl(self, building=False, fleet=False):
+    def crawl(self, building=False, station=False, fleet=False):
         for planet in empire:
-            if self.current_page == 'fleet1':
-                if fleet:
-                    self.update_planet_fleet(planet)
-                if building:
-                    self.update_planet_buildings(planet)
-            else:
-                if building:
-                    self.update_planet_buildings(planet)
-                if fleet:
-                    self.update_planet_fleet(planet)
+            if fleet:
+                self.update_planet_fleet(planet)
+            if building:
+                self.update_planet_buildings(planet)
+            if station:
+                self.update_planet_stations(planet)
             self.update_planet_resources(planet)
         self.crawled = True
 
     def construct(self, construction, planet=None):
         planet = planet if planet is not None else self.current_planet
-        if self.current_page != 'resources':
-            self.go_to(planet, 'resources', update=False)
         if not isinstance(construction, Constructions):
             assert hasattr(planet, construction), \
                     '%r has not %r' % (planet, construction)
             construction = getattr(planet, construction)
+        if isinstance(construction, tuple(BUILDINGS.values())):
+            page = 'resources'
+        else:
+            page = 'station'
+        self.go_to(planet, page, update=False)
         self.click(construction.css_dom)
+        self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
     def go_to(self, planet=None, page=None, update=True):
         if planet is not None and self.current_planet is not planet:

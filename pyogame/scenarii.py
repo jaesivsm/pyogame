@@ -24,9 +24,7 @@ def rapatriate(interface, destination=None):
 
 def plan_construction(interface):
     planet = empire.idles.cheapest
-    if planet is None:
-        logger.info('All planets are constructing')
-        return
+    assert planet, 'All planets are constructing'
 
     if planet.resources > planet.to_construct.cost:
         logger.warn('Resources are available on %r to construct %r'
@@ -44,15 +42,16 @@ def plan_construction(interface):
     travel_id = interface.send_resources(empire.capital, planet,
             resources=planet.to_construct.cost)
 
-    planet.waiting_for[travel_id] = planet.to_construct.building_attr
+    planet.waiting_for[travel_id] = planet.to_construct.name()
 
 
 def upgrade_empire(interface):
-    interface.crawl(building=True, fleet=True)
+    interface.crawl(building=True, fleet=True, station=True)
     interface.update_empire_overall()
     while True:
         try:
             plan_construction(interface)
+            interface.update_empire_overall()
         except AssertionError:
             break
 

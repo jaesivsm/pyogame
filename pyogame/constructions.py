@@ -1,3 +1,4 @@
+import re
 import logging
 
 from pyogame.tools.resources import Resources
@@ -12,8 +13,7 @@ class Constructions(object):
     power = 1.5
     energy_factor = 10
     cmp_factor = 1
-    css_dom = None
-    building_attr = ''
+    position = 0
 
     def __init__(self, level=0):
         self.level = level
@@ -24,6 +24,14 @@ class Constructions(object):
 
     def _energy(self, level):
         return self.energy_factor * level * pow(1.1, level)
+
+    @property
+    def css_dom(self):
+        return "css=#button%d a.fastBuild" % self.position
+
+    @classmethod
+    def name(cls):
+        return re.sub('([A-Z])', r'_\1', cls.__name__).lower().strip('_')
 
     @property
     def cost(self):
@@ -39,29 +47,58 @@ class Constructions(object):
 class MetalMine(Constructions):
     base_metal_cost = 60
     base_crystal_cost = 15
-    css_dom = "css=#button1 a.fastBuild"
-    building_attr = 'metal_mine'
+    position = 1
 
 
 class CrystalMine(Constructions):
     base_metal_cost = 48
     base_crystal_cost = 24
     power = 1.6
-    css_dom = "css=#button2 a.fastBuild"
-    building_attr = 'crystal_mine'
+    position = 2
 
 
 class DeuteriumSynthetizer(Constructions):
     base_metal_cost = 225
     base_crystal_cost = 75
     energy_factor = 20
-    css_dom = "css=#button3 a.fastBuild"
-    building_attr = 'deuterium_synthetize'
+    position = 3
 
 
 class SolarPlant(Constructions):
     base_metal_cost = 75
     base_crystal_cost = 30
     energy_factor = 20
-    css_dom = "css=#button4 a.fastBuild"
-    building_attr = 'solar_plant'
+    position = 4
+
+
+class RobotFactory(Constructions):
+    base_metal_cost = 400
+    base_crystal_cost = 120
+    base_deuterium_cost = 200
+    power = 2
+    energy_factor = 0
+    position = 0
+
+
+class NaniteFactory(Constructions):
+    base_metal_cost = 1000000
+    base_crystal_cost = 500000
+    base_deuterium_cost = 100000
+    power = 2
+    energy_factor = 0
+    position = 5
+
+
+BUILDINGS = {
+        0: MetalMine,
+        1: CrystalMine,
+        2: DeuteriumSynthetizer,
+        3: SolarPlant,
+}
+STATIONS = {
+        0: RobotFactory,
+        5: NaniteFactory,
+}
+
+
+
