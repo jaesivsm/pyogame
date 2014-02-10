@@ -155,6 +155,7 @@ class Interface(selenium):
                 update_funcs[self.current_page](planet)
             for func in update_funcs.values():
                 func(planet)
+            self.update_planet_resources(planet)
 
     def construct(self, construction, planet=None):
         planet = planet if planet is not None else self.current_planet
