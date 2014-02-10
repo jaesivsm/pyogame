@@ -22,11 +22,11 @@ def parse_args():
     parser.add_argument('-c', '--construct', dest='construct',
             action='store_true', default=False)
     parser.add_argument('-p', '--probes', dest='probes',
-            action='store_true', default=False)
+            action='store', default=False)
     parser.add_argument('-b', '--build', dest='build',
             action='store', default=False)
     parser.add_argument('-i', '--idles', dest='idles',
-            action='store', default=False)
+            action='store_true', default=False)
     args = parser.parse_args()
     if args.quiet:
         loglevel = logging.ERROR
