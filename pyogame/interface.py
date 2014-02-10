@@ -251,6 +251,7 @@ class Interface(selenium):
         if planet is None:
             planet = empire.capital
         self.go_to(planet, 'galaxy')
+        time.sleep(2)
         galaxy, syst, place = planet.coords
         wideness = int(wideness)
         deb = syst - wideness
@@ -264,12 +265,18 @@ class Interface(selenium):
             self.type("id=galaxy_input", galaxy)
             self.type("id=system_input", s)
             self.click("id=showbutton")
+            time.sleep(1)
             for i in range(1,17):
                 pseudo = self.get_table("galaxytable."+ str(i) +".7")
                 if pseudo.endswith('(i)') or pseudo.endswith('(I)'):
-                    self.send_fleet(interface, [galaxy, syst, i], Probes, 'spy')
+                    self.send_fleet(interface, [galaxy, s, i-1], Probes, 'spy')
                     self.go_to(planet, 'galaxy')
+                    self.type("id=galaxy_input", galaxy)
+                    self.type("id=system_input", s)
+                    self.click("id=showbutton")
+                    time.sleep(1)
             self.go_to(planet, 'galaxy')
+            time.sleep(1)
 
     def send_fleet(self, interface, galaxy_position, vessels = None, \
             mission = 'transport', planet = None):
@@ -295,8 +302,8 @@ class Interface(selenium):
                     self.click("css=#start > span")
                     self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
                     self.current_page = None
-            else :
-                print 'tous les vaisseaux'
+        if vessels is None :
+            print 'tous les vaisseaux'
 
     def load(self):
         logger.debug('loading objects from cache')
