@@ -81,7 +81,7 @@ def resources_reception_and_construction(interface):
             continue
         for construct in set(waited_constructs[planet.position]):
             # we count how many constructions resources
-            # have been delivered for on this planet
+            # have been delivered for on this planet
             waited_constr = waited_constructs[planet.position].count(construct)
             # we count how many of this construction are waiting on this planet
             waited_travel = planet.waiting_for.values().count(construct)
@@ -95,9 +95,8 @@ def resources_reception_and_construction(interface):
                         del planet.waiting_for[travel_id]
 
 
-def probe_idles(interface, range) :
-    interface.check_galaxies(range)
-    pass
+def probe_idles(interface, wideness) :
+    interface.check_galaxies(interface, wideness)
 
 def attack_idles(interface) :
     pass

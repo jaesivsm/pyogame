@@ -14,6 +14,7 @@ from pyogame.fleet import FlyingFleet
 from pyogame.constructions import BUILDINGS, STATIONS, Constructions
 from pyogame.tools.const import CACHE_PATH
 from pyogame.tools.resources import RES_TYPES
+from pyogame.ships import Probes
 
 logger = logging.getLogger(__name__)
 DEFAULT_WAIT_TIME = 40000
@@ -246,15 +247,56 @@ class Interface(selenium):
         self.current_page = None
         return empire.missions.add(sent_fleet)
 
-    def check_galaxies(self, wideness = 0):
-        self.go_to(empire.capital, 'galaxy')
-        for i in range(1,17):
-            pseudo = self.get_table("galaxytable."+ str(i) +".7")
-            if pseudo.endswith('(i)') or pseudo.endswith('(I)'):
-                self.send_probe(interface, i)
+    def check_galaxies(self, interface, wideness = 0, planet = None):
+        if planet is None:
+            planet = empire.capital
+        self.go_to(planet, 'galaxy')
+        galaxy, syst, place = planet.coords
+        wideness = int(wideness)
+        deb = syst - wideness
+        if deb < 1:
+            deb = 1
+        fin = syst + wideness
+        if fin > 499:
+            fin = 499
+        
+        for s in range(deb, fin+1):
+            self.type("id=galaxy_input", galaxy)
+            self.type("id=system_input", s)
+            self.click("id=showbutton")
+            for i in range(1,17):
+                pseudo = self.get_table("galaxytable."+ str(i) +".7")
+                if pseudo.endswith('(i)') or pseudo.endswith('(I)'):
+                    self.send_fleet(interface, [galaxy, syst, i], Probes, 'spy')
+                    self.go_to(planet, 'galaxy')
+            self.go_to(planet, 'galaxy')
 
-    def send_probe(interface, galaxy_position):
-        print galaxy_position
+    def send_fleet(self, interface, galaxy_position, vessels = None, \
+            mission = 'transport', planet = None):
+        if planet is None:
+            planet = empire.capital
+        self.go_to(planet, 'fleet1')
+        for vessel in planet.fleet:
+            if vessels is not None and isinstance(vessel, vessels):
+                self.type('id=ship_%d' % vessel.ships_id, 1)
+                self.click("css=#continue > span")
+                self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
+
+                self.type("id=galaxy", galaxy_position[0])
+                self.type("id=system", galaxy_position[1])
+                self.type("id=position", galaxy_position[2])
+                self.click("id=pbutton")
+                self.click("css=#continue > span")
+                self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
+                
+                if mission == 'spy':
+                    self.click("css=#missionButton6")
+                    logger.warn('Launching probe on %r' % galaxy_position)
+                    self.click("css=#start > span")
+                    self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
+                    self.current_page = None
+            else :
+                print 'tous les vaisseaux'
 
     def load(self):
         logger.debug('loading objects from cache')

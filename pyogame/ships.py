@@ -52,5 +52,11 @@ class GTs(Ships):
     xpath = "//ul[@id='civil']/li[2]/div/a"
     ships_id = 203
 
+class Probes(Ships):
+    single_ship_capacity = 5
+    are_transport = False
+    xpath = "//ul[@id='civil']/li[5]/div/a"
+    ships_id = 210
 
-SHIPS_TYPES = {203 : GTs, 202: PTs}
+
+SHIPS_TYPES = {203 : GTs, 202: PTs, 210: Probes}
