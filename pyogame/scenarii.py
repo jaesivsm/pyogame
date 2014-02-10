@@ -17,6 +17,11 @@ def rapatriate(interface, destination=None):
         if destination is source:
             continue
         if not source.fleet:
+            logger.debug('no fleet on %r' % source)
+            continue
+        if float(source.resources.total) / source.fleet.capacity < 3. / 4:
+            logger.debug('not enough resources on %r to bother repatriating'
+                    % source)
             continue
         interface.send_resources(source, destination, all_ships=True)
 

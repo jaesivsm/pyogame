@@ -34,7 +34,7 @@ class Resources(object):
     def __getitem__(self, key):
         if not key in RES_TYPES:
             raise TypeError('Resources attributes must be in %r' % RES_TYPES)
-        return getattr(self, key)
+        return getattr(self, key, 0)
 
     def __setitem__(self, key, value):
         if not key in RES_TYPES:

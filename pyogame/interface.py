@@ -236,7 +236,7 @@ class Interface(selenium):
         return_time = datetime(year + 2000, month, day, hour, minute, second)
 
         logger.warn('Moving %r from %r to %r arriving at %s'
-                % (resources if resources else 'all resources',
+                % (resources.movable if resources else 'all resources',
                 src, dst, arrival_time.isoformat()))
         sent_fleet.arrival_time = arrival_time
         sent_fleet.return_time = return_time

@@ -40,9 +40,9 @@ class Planet(object):
         return bool(self.waiting_for)
 
     def time_to_construct(self, cost):
-        return (cost.metal + cost.crystal) \
-                / (2500 * (self.robot_factory.level + 1)
-                        * pow(2, self.nanite_factory.level))
+        return ((float(cost.metal) + cost.crystal)
+                / (2500. * (float(self.robot_factory.level) + 1.)
+                * pow(2., float(self.nanite_factory.level))))
 
     @property
     def to_construct(self):
@@ -53,8 +53,9 @@ class Planet(object):
             to_construct = self.crystal_mine
         if to_construct.cost.energy > self.resources.energy:
             to_construct = self.solar_plant
-        if self.time_to_construct(to_construct.cost) > 72:
-            if self.robot_factory.level >= 10:
+        if self.time_to_construct(to_construct.cost) \
+                / float(to_construct.level + 1) > 0.7:  # Fixed by experiment...
+            if self.robot_factory.level < 10:
                 return self.robot_factory
             return self.nanite_factory
         return to_construct
