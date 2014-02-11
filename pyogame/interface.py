@@ -273,7 +273,7 @@ class Interface(selenium):
             for i in range(1,17):
                 pseudo = self.get_table("galaxytable."+ str(i) +".7")
                 if pseudo.endswith('(i)') or pseudo.endswith('(I)'):
-                    self.send_fleet(interface, [galaxy, s, i-1], Probes, 'spy')
+                    self.send_fleet(interface, [galaxy, s, i-1], (Probes), 'spy')
                     self.go_to(planet, 'galaxy')
                     self.type("id=galaxy_input", galaxy)
                     self.type("id=system_input", s)
@@ -282,7 +282,7 @@ class Interface(selenium):
             self.go_to(planet, 'galaxy')
             time.sleep(1)
 
-    def send_fleet(self, interface, galaxy_position, vessels = None, \
+    def send_fleet(self, interface, galaxy_position, vessels = None,
             mission = 'transport', planet = None):
         if planet is None:
             planet = empire.capital
@@ -290,22 +290,22 @@ class Interface(selenium):
         for vessel in planet.fleet:
             if vessels is not None and isinstance(vessel, vessels):
                 self.type('id=ship_%d' % vessel.ships_id, 1)
-                self.click("css=#continue > span")
-                self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
+        self.click("css=#continue > span")
+        self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
-                self.type("id=galaxy", galaxy_position[0])
-                self.type("id=system", galaxy_position[1])
-                self.type("id=position", galaxy_position[2])
-                self.click("id=pbutton")
-                self.click("css=#continue > span")
-                self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
-                
-                if mission == 'spy':
-                    self.click("css=#missionButton6")
-                    logger.warn('Launching probe on %r' % galaxy_position)
-                    self.click("css=#start > span")
-                    self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
-                    self.current_page = None
+        self.type("id=galaxy", galaxy_position[0])
+        self.type("id=system", galaxy_position[1])
+        self.type("id=position", galaxy_position[2])
+        self.click("id=pbutton")
+        self.click("css=#continue > span")
+        self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
+        
+        if mission == 'spy':
+            self.click("css=#missionButton6")
+            logger.warn('Launching probe on %r' % galaxy_position)
+            self.click("css=#start > span")
+            self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
+            self.current_page = None
         if vessels is None :
             print 'tous les vaisseaux'
 
