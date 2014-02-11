@@ -264,7 +264,7 @@ class Interface(selenium):
         fin = syst + wideness
         if fin > 499:
             fin = 499
-        
+
         for s in range(deb, fin+1):
             self.type("id=galaxy_input", galaxy)
             self.type("id=system_input", s)
@@ -299,7 +299,7 @@ class Interface(selenium):
         self.click("id=pbutton")
         self.click("css=#continue > span")
         self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
-        
+
         if mission == 'spy':
             self.click("css=#missionButton6")
             logger.warn('Launching probe on %r' % galaxy_position)
