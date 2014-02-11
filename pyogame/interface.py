@@ -12,7 +12,7 @@ from pyogame.empire import empire
 from pyogame.planet import Planet
 from pyogame.fleet import FlyingFleet
 from pyogame.constructions import BUILDINGS, STATIONS, Constructions
-from pyogame.tools.const import CACHE_PATH
+from pyogame.tools.const import get_cache_path
 from pyogame.tools.resources import RES_TYPES
 from pyogame.ships import Probes
 
@@ -28,6 +28,7 @@ class Interface(selenium):
             assert key in conf_dict, "configuration dictionnary must at " \
                     "least own the following keys: " + ", ".join(needed)
         empire.capital_coords = conf_dict.get('capital')
+        self.user = conf_dict['user']
 
         url = "http://%s.ogame.gameforge.com/" % conf_dict.get('lang', 'fr')
 
@@ -36,7 +37,7 @@ class Interface(selenium):
         self.current_page = None
         self.start()
 
-        logger.info('Logging in with identity %r' % conf_dict['user'])
+        logger.info('Logging in with identity %r' % self.user)
         self.open(url)
         self.click("id=loginBtn")
         self.select("id=serverLogin", "label=%s" % conf_dict['univers'])
@@ -121,7 +122,7 @@ class Interface(selenium):
         planet.fleet_updated = True
 
     def update_empire_overall(self):
-        logger.debug('updating flags')
+        logger.debug('updating empire overall')
         source = html.fromstring(self.get_html_source())
         planets_list = source.xpath("//div[@id='planetList']")[0]
         for position, elem in enumerate(planets_list):
@@ -144,7 +145,7 @@ class Interface(selenium):
             coords = [int(coord) for coord in coords.split(':')]
             empire.add(Planet(name, coords, position + 1))
 
-    def crawl(self, building=False, station=False, fleet=False):
+    def crawl(self, building=False, station=False, fleet=False, resources=True):
         noc = lambda x: None
         update_funcs = {
                 'resources': self.update_planet_buildings if building else noc,
@@ -156,7 +157,8 @@ class Interface(selenium):
                 update_funcs[self.current_page](planet)
             for func in update_funcs.values():
                 func(planet)
-            self.update_planet_resources(planet)
+            if resources:
+                self.update_planet_resources(planet)
 
     def construct(self, construction, planet=None):
         planet = planet if planet is not None else self.current_planet
@@ -236,15 +238,17 @@ class Interface(selenium):
                 re.split('[\.: ]', self.get_text("//span[@id='returnTime']"))]
         return_time = datetime(year + 2000, month, day, hour, minute, second)
 
-        logger.warn('Moving %r from %r to %r arriving at %s'
-                % (resources.movable if resources else 'all resources',
-                src, dst, arrival_time.isoformat()))
+        resources = repr(resources.movable) \
+                if resources else 'all resources (%r)' % src.resources.movable
+        logger.warn('Moving %s from %r to %r arriving at %s'
+                % (resources, src, dst, arrival_time.isoformat()))
         sent_fleet.arrival_time = arrival_time
         sent_fleet.return_time = return_time
 
         self.click("css=#start > span")
         self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
         self.current_page = None
+        self.update_planet_resources(src)
         return empire.missions.add(sent_fleet)
 
     def check_galaxies(self, interface, wideness = 0, planet = None):
@@ -306,22 +310,23 @@ class Interface(selenium):
             print 'tous les vaisseaux'
 
     def load(self):
-        logger.debug('loading objects from cache')
-        if not os.path.exists(CACHE_PATH):
-            logger.info('No cache file found at %r' % CACHE_PATH)
+        cache_path = get_cache_path(self.user)
+        if not os.path.exists(cache_path):
+            logger.info('No cache file found at %r' % cache_path)
             return False
+        logger.debug('Loading objects from %r' % cache_path)
         try:
-            with open(CACHE_PATH, 'r') as fp:
+            with open(cache_path, 'r') as fp:
                 empire.load(**json.load(fp))
         except ValueError:
             logger.error('Cache has been corrupted, ignoring it')
-            os.remove(CACHE_PATH)
+            os.remove(cache_path)
             return False
         return True
 
     def dump(self):
         handler = lambda o: o.isoformat() if isinstance(o, datetime) else None
-        with open(CACHE_PATH, 'w') as fp:
+        with open(get_cache_path(self.user), 'w') as fp:
             json.dump(empire.dump(), fp, default=handler)
 
 # vim: set et sts=4 sw=4 tw=120:

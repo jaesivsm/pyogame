@@ -12,14 +12,14 @@ def rapatriate(interface, destination=None):
     assert destination, "Empire has no capital " \
             "and no destination has been provided"
     logger.info('Launching rapatriation to %r' % destination)
-    interface.crawl(fleet=True)
+    interface.crawl(fleet=True, resources=False)
     for source in empire:
         if destination is source:
             continue
         if not source.fleet:
             logger.debug('no fleet on %r' % source)
             continue
-        if float(source.resources.total) / source.fleet.capacity < 3. / 4:
+        if float(source.resources.total) / source.fleet.capacity < 2. / 3:
             logger.debug('not enough resources on %r to bother repatriating'
                     % source)
             continue

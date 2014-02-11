@@ -1,9 +1,15 @@
+import os
 __pages = {
         'fleet': {'fr': 'Flotte'},
         'resources': {'fr': 'Ressources'},
 }
+
 CACHE_PATH = 'empire.cache'
-CONF_PATH = 'conf.json'
+def get_cache_path(user):
+    dirname, filename = os.path.split(os.path.abspath(CACHE_PATH))
+    return os.path.join(dirname, '%s.%s' % (user, filename))
+
+CONF_PATH = os.path.abspath('conf.json')
 
 
 class Collection(object):
