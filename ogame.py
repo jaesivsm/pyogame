@@ -4,18 +4,19 @@
 Outil en ligne de commande pour inscrire des actions
 à exécuter ou pour les exécuter directement.
 """
-from pyogame import utils, scenarii
+from pyogame import tools, scenarii, routines
+
 
 
 if __name__ == "__main__":
-    args, logfile, loglevel = utils.parse_args()
+    args, logfile, loglevel = tools.parse_args()
 
-    session = utils.load_conf(args.user, logfile, loglevel)
+    session = tools.load_conf(args.user, logfile, loglevel)
 
     if args.rapatriate:
-        scenarii.rapatriate(session)
+        routines.civil.rapatriate(session)
     elif args.construct:
-        scenarii.plan_construction(session)
+        routines.civil.plan_construction(session)
     elif args.probes:
         scenarii.probe_idles(session, args.probes)
     elif args.idles :
@@ -25,9 +26,10 @@ if __name__ == "__main__":
     else:
         session.crawl(building=True, fleet=True, station=True)
         session.update_empire_overall()
-        scenarii.resources_reception_and_construction(session)
-        scenarii.rapatriate(session)
-        scenarii.upgrade_empire(session)
+        routines.civil.in_place_empire_upgrade(session)
+        routines.civil.resources_reception_and_construction(session)
+        routines.civil.rapatriate(session)
+        routines.civil.plan_construction(session)
     session.dump()
 
 # vim: set et sts=4 sw=4 tw=120:

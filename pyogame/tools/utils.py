@@ -3,7 +3,7 @@ import json
 import logging
 from argparse import ArgumentParser
 
-LOGFILE = '~/ogame.log'
+from .const import LOGFILE
 
 
 def parse_args():
