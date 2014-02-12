@@ -14,7 +14,7 @@ from pyogame.fleet import FlyingFleet
 from pyogame.constructions import BUILDINGS, STATIONS, Constructions
 from pyogame.tools.const import get_cache_path
 from pyogame.tools.resources import RES_TYPES
-from pyogame.ships import Probes
+from pyogame.ships import Probes, Recycler
 
 logger = logging.getLogger(__name__)
 DEFAULT_WAIT_TIME = 40000
@@ -251,7 +251,7 @@ class Interface(selenium):
         self.update_planet_resources(src)
         return empire.missions.add(sent_fleet)
 
-    def check_galaxies(self, interface, wideness = 0, planet = None):
+    def check_galaxies(self, interface, wideness=0, mission='spy', planet=None):
         if planet is None:
             planet = empire.capital
         self.go_to(planet, 'galaxy')
@@ -270,15 +270,31 @@ class Interface(selenium):
             self.type("id=system_input", s)
             self.click("id=showbutton")
             time.sleep(1)
-            for i in range(1,17):
-                pseudo = self.get_table("galaxytable."+ str(i) +".7")
-                if pseudo.endswith('(i)') or pseudo.endswith('(I)'):
-                    self.send_fleet(interface, [galaxy, s, i-1], (Probes), 'spy')
-                    self.go_to(planet, 'galaxy')
-                    self.type("id=galaxy_input", galaxy)
-                    self.type("id=system_input", s)
-                    self.click("id=showbutton")
-                    time.sleep(1)
+            if mission=='spy':
+                for i in range(1,17):
+                    pseudo = self.get_table("galaxytable."+ str(i) +".7")
+                    if pseudo.endswith('(i)') or pseudo.endswith('(I)'):
+                        self.send_fleet(interface,[galaxy, s, i-1],(Probes),
+                                mission,planet)
+                        self.go_to(planet, 'galaxy')
+                        self.type("id=galaxy_input", galaxy)
+                        self.type("id=system_input", s)
+                        self.click("id=showbutton")
+                        time.sleep(1)
+            elif mission=='recycle':
+                tri=0
+                source = html.fromstring(self.get_html_source())
+                for tr in source.xpath(
+                        '//table[@id="galaxytable"]//tr'):
+                    tri+=1
+                    tdi=0
+                    for td in tr:
+                        tdi+=1
+                        if tri<5:
+                            continue
+                        if tdi==7 and not td.find_class('js_no_action'):
+                            self.send_fleet(interface,[galaxy, s, tri-4],
+                                    (Recycler),mission,planet)
             self.go_to(planet, 'galaxy')
             time.sleep(1)
 
@@ -289,23 +305,34 @@ class Interface(selenium):
         self.go_to(planet, 'fleet1')
         for vessel in planet.fleet:
             if vessels is not None and isinstance(vessel, vessels):
-                self.type('id=ship_%d' % vessel.ships_id, 1)
+                number=0
+                if mission=='spy':
+                    number=1
+                if mission=='recycle':
+                    number=2
+                self.type('id=ship_%d' % vessel.ships_id, number)
         self.click("css=#continue > span")
         self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
         self.type("id=galaxy", galaxy_position[0])
         self.type("id=system", galaxy_position[1])
         self.type("id=position", galaxy_position[2])
-        self.click("id=pbutton")
+        if mission=='recycle':
+            self.click("id=dbutton")
+        else:
+            self.click("id=pbutton")
         self.click("css=#continue > span")
         self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
         if mission == 'spy':
             self.click("css=#missionButton6")
             logger.warn('Launching probe on %r' % galaxy_position)
-            self.click("css=#start > span")
-            self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
-            self.current_page = None
+        elif mission=='recycle':
+            self.click("css=#missionButton8")
+            logger.warn('Launching recyclers on %r' % galaxy_position)
+        self.click("css=#start > span")
+        self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
+        self.current_page = None
         if vessels is None :
             print 'tous les vaisseaux'
 

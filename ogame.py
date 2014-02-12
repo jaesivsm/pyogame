@@ -19,6 +19,8 @@ if __name__ == "__main__":
         routines.civil.plan_construction(session)
     elif args.probes:
         scenarii.probe_idles(session, args.probes)
+    elif args.recycle:
+        scenarii.recycle(session, args.recycle)
     elif args.idles :
         scenarii.attack_idles(session)
     elif args.build:

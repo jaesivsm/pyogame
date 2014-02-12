@@ -17,16 +17,22 @@ def parse_args():
             action='count', default=0)
     parser.add_argument('-l', '--log', dest='log',
             action='store_true', default=False)
+    # rapatriate the ressources to the capital
     parser.add_argument('-r', '--rapatriate', dest='rapatriate',
             action='store_true', default=False)
     parser.add_argument('-c', '--construct', dest='construct',
             action='store_true', default=False)
+    # send probs around
     parser.add_argument('-p', '--probes', dest='probes',
-            action='store', default=False)
+            action='store', default=0)
+    # build a specific building on a specific planet
     parser.add_argument('-b', '--build', dest='build',
             action='store', default=False)
     parser.add_argument('-i', '--idles', dest='idles',
             action='store_true', default=False)
+    # send recyclers if fields exist
+    parser.add_argument('-y', '--recycle', dest='recycle',
+            action='store', default=0)
     args = parser.parse_args()
     if args.quiet:
         loglevel = logging.ERROR
