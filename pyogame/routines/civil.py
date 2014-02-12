@@ -62,24 +62,24 @@ def resources_reception_and_construction(interface):
     for fleet in empire.missions.arrived:
         if not fleet.travel_id in empire.waiting_for:
             continue  # no one cares about this fleet
-        planet = empire.planets[fleet.to_pl]
+        planet = empire.planets[fleet.dst]
         if not planet.idle:  # construction has began
             continue
-        if not fleet.to_pl in waited_constructs:
-            waited_constructs[fleet.to_pl] = []
+        if not fleet.dst in waited_constructs:
+            waited_constructs[fleet.dst] = []
         # we list the constructions fleets have delivered resources for
         logger.info('A fleet has arrived on %r to construct %r'
                 % (planet, planet.waiting_for[fleet.travel_id]))
-        waited_constructs[planet.position].append(
+        waited_constructs[planet.key].append(
                 planet.waiting_for[fleet.travel_id])
 
     for planet in empire:
-        if not planet.position in waited_constructs:
+        if not planet.key in waited_constructs:
             continue
-        for construct in set(waited_constructs[planet.position]):
+        for construct in set(waited_constructs[planet.key]):
             # we count how many constructions resources
             # have been delivered for on this planet
-            waited_constr = waited_constructs[planet.position].count(construct)
+            waited_constr = waited_constructs[planet.key].count(construct)
             # we count how many of this construction are waiting on this planet
             waited_travel = planet.waiting_for.values().count(construct)
             if waited_constr == waited_travel:

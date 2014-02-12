@@ -84,11 +84,11 @@ class Fleet(object):
 
 class FlyingFleet(Fleet):
 
-    def __init__(self, from_pl, to_pl, travel_id=None,
+    def __init__(self, src, dst, travel_id=None,
             arrival_time=None, return_time=None):
         super(FlyingFleet, self).__init__()
-        self.from_pl = from_pl
-        self.to_pl = to_pl
+        self.src = src
+        self.dst = dst
         self.travel_id = travel_id if travel_id is not None else str(uuid4())
         if arrival_time is not None \
                 and not isinstance(arrival_time, datetime.datetime):
@@ -110,14 +110,14 @@ class FlyingFleet(Fleet):
     def dump(self):
         dump = super(FlyingFleet, self).dump()
         dump.update({'travel_id': self.travel_id,
-                'from_pl': self.from_pl, 'arrival_time': self.arrival_time,
-                'to_pl': self.to_pl, 'return_time': self.return_time,
+                'src': self.dst, 'arrival_time': self.arrival_time,
+                'dst': self.src, 'return_time': self.return_time,
         })
         return dump
 
     def __repr__(self):
         return r'<Fleet %s (%r->%r)>' % (self.travel_id.split('-', 1)[0],
-                self.from_pl, self.to_pl)
+                self.src, self.dst)
 
 
 class Missions(Collection):

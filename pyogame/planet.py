@@ -3,6 +3,7 @@ import logging
 from pyogame.tools import Resources
 from pyogame.fleet import Fleet
 from pyogame.constructions import BUILDINGS, STATIONS
+from pyogame.tools.common import coords_to_key
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,9 @@ class Planet(object):
         for construction in BUILDINGS.values() + STATIONS.values():
             setattr(self, construction.name(),
                     construction(kwargs.get(construction.name(), 0)))
+
+    def key(self):
+        return coords_to_key(self.coords)
 
     @property
     def is_fleet_empty(self):

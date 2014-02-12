@@ -1,3 +1,7 @@
+def coords_to_key(coords):
+    return ':'.join([str(coord) for coord in coords])
+
+
 class FilterFailed(Exception):
     pass
 

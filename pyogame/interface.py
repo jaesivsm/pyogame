@@ -15,6 +15,7 @@ from pyogame.constructions import BUILDINGS, STATIONS, Constructions
 from pyogame.tools.const import get_cache_path
 from pyogame.tools.resources import RES_TYPES
 from pyogame.ships import Probes, Recycler
+from pyogame.tools.common import coords_to_key
 
 logger = logging.getLogger(__name__)
 DEFAULT_WAIT_TIME = 40000
@@ -202,7 +203,8 @@ class Interface(selenium):
             logger.warn("No ships on %r, can't move resources" % src)
             return
 
-        sent_fleet = FlyingFleet(src.position, dst.position)
+        dst_key = coords_to_key(dst.coords if isinstance(dst, Planet) else dst)
+        sent_fleet = FlyingFleet(coords_to_key(src.coords), dst_key)
         if all_ships:
             for ships in src.fleet.transports:
                 self.click(ships.xpath)
