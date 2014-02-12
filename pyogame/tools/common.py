@@ -33,6 +33,11 @@ class Collection(object):
         coll._filters.update(kwargs)
         return coll
 
+    def first(self):  # FIXME ugly
+        elems = list(self)
+        if elems:
+            return elems[0]
+
     def __len__(self):
         return len(list(self.__iter__()))
 

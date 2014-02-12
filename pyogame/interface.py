@@ -12,10 +12,11 @@ from pyogame.empire import empire
 from pyogame.planet import Planet
 from pyogame.fleet import FlyingFleet
 from pyogame.constructions import BUILDINGS, STATIONS, Constructions
-from pyogame.tools.const import get_cache_path
-from pyogame.tools.resources import RES_TYPES
+from pyogame.tools.const import get_cache_path, MISSIONS, MISSIONS_DST
+from pyogame.tools.resources import RES_TYPES, Resources
 from pyogame.ships import Probes, Recycler
 from pyogame.tools.common import coords_to_key
+from pyogame.routines.common import spy, recycle
 
 logger = logging.getLogger(__name__)
 DEFAULT_WAIT_TIME = 40000
@@ -197,61 +198,51 @@ class Interface(selenium):
                 self.update_planet_fleet(planet)
         return self.current_planet, self.current_page
 
-    def send_resources(self, src, dst, all_ships=False, resources=None):
+    def get_date(self, css_id):
+        date =  re.split('[\.: ]', self.get_text("//span[@id='%s']" % css_id))
+        day, month, year, hour, minute, second = [int(i) for i in date]
+        return datetime(year + 2000, month, day, hour, minute, second)
+
+    def send_fleet(self, src, dst, mission, fleet,
+            resources=Resources(), dtype='planet'):
         self.go_to(src, 'fleet1')
-        if not src.fleet.transports:
-            logger.warn("No ships on %r, can't move resources" % src)
-            return
+        assert mission in MISSIONS, \
+                'mission should be among %r' % MISSIONS.keys()
 
-        dst_key = coords_to_key(dst.coords if isinstance(dst, Planet) else dst)
-        sent_fleet = FlyingFleet(coords_to_key(src.coords), dst_key)
-        if all_ships:
-            for ships in src.fleet.transports:
-                self.click(ships.xpath)
-                sent_fleet.add(ships=ships)
-            src.fleet.clear()
+        if isinstance(dst, Planet):
+            dst_key = dst.key
+            dst = dst.coords
         else:
-            for ships in src.fleet.transports.for_moving(resources.total):
-                self.type('id=ship_%d' % ships.ships_id, ships.quantity)
-                sent_fleet.add(ships=ships)
-                src.fleet.remove(ships=ships)
+            dst_key = coords_to_key(dst)
+
+        sent_fleet = FlyingFleet(src.key, dst_key)
+        for ships in fleet:
+            self.type('id=ship_%d' % ships.ships_id, ships.quantity)
+            sent_fleet.add(ships=ships)
+            src.fleet.remove(ships=ships)
 
         self.click("css=#continue > span")
         self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
-        self.type("id=galaxy", dst.coords[0])
-        self.type("id=system", dst.coords[1])
-        self.type("id=position", dst.coords[2])
-        self.click("id=pbutton")
+        self.type("id=galaxy", dst[0])
+        self.type("id=system", dst[1])
+        self.type("id=position", dst[2])
+        self.click(MISSIONS_DST[dtype])
         self.click("css=#continue > span")
         self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
-        self.click("css=#missionButton3")
-        if not resources:
-            self.click("css=#allresources > img")
-        else:
-            for res_type, quantity in resources.movable:
-                self.type('id=%s' % res_type, quantity)
+        self.click(MISSIONS[mission])
+        for res_type, quantity in resources.movable:
+            self.type('id=%s' % res_type, quantity)
         time.sleep(1)
-        day, month, year, hour, minute, second = [int(i) for i in
-                re.split('[\.: ]', self.get_text("//span[@id='arrivalTime']"))]
-        arrival_time = datetime(year + 2000, month, day, hour, minute, second)
-        day, month, year, hour, minute, second = [int(i) for i in
-                re.split('[\.: ]', self.get_text("//span[@id='returnTime']"))]
-        return_time = datetime(year + 2000, month, day, hour, minute, second)
-
-        resources = repr(resources.movable) \
-                if resources else 'all resources (%r)' % src.resources.movable
-        logger.warn('Moving %s from %r to %r arriving at %s'
-                % (resources, src, dst, arrival_time.isoformat()))
-        sent_fleet.arrival_time = arrival_time
-        sent_fleet.return_time = return_time
+        sent_fleet.arrival_time = self.get_date('arrivalTime')
+        sent_fleet.return_time = self.get_date('returnTime')
 
         self.click("css=#start > span")
         self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
         self.current_page = None
         self.update_planet_resources(src)
-        return empire.missions.add(sent_fleet)
+        return sent_fleet
 
     def check_galaxies(self, interface, wideness=0, mission='spy', planet=None):
         if planet is None:
@@ -276,8 +267,7 @@ class Interface(selenium):
                 for i in range(1,17):
                     pseudo = self.get_table("galaxytable."+ str(i) +".7")
                     if pseudo.endswith('(i)') or pseudo.endswith('(I)'):
-                        self.send_fleet(interface,[galaxy, s, i-1],(Probes),
-                                mission,planet)
+                        spy(self, planet, [galaxy, s, i-1])
                         self.go_to(planet, 'galaxy')
                         self.type("id=galaxy_input", galaxy)
                         self.type("id=system_input", s)
@@ -295,48 +285,9 @@ class Interface(selenium):
                         if tri<5:
                             continue
                         if tdi==7 and not td.find_class('js_no_action'):
-                            self.send_fleet(interface,[galaxy, s, tri-4],
-                                    (Recycler),mission,planet)
+                            spy(self, planet, [galaxy, s, tri-4])
             self.go_to(planet, 'galaxy')
             time.sleep(1)
-
-    def send_fleet(self, interface, galaxy_position, vessels = None,
-            mission = 'transport', planet = None):
-        if planet is None:
-            planet = empire.capital
-        self.go_to(planet, 'fleet1')
-        for vessel in planet.fleet:
-            if vessels is not None and isinstance(vessel, vessels):
-                number=0
-                if mission=='spy':
-                    number=1
-                if mission=='recycle':
-                    number=2
-                self.type('id=ship_%d' % vessel.ships_id, number)
-        self.click("css=#continue > span")
-        self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
-
-        self.type("id=galaxy", galaxy_position[0])
-        self.type("id=system", galaxy_position[1])
-        self.type("id=position", galaxy_position[2])
-        if mission=='recycle':
-            self.click("id=dbutton")
-        else:
-            self.click("id=pbutton")
-        self.click("css=#continue > span")
-        self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
-
-        if mission == 'spy':
-            self.click("css=#missionButton6")
-            logger.warn('Launching probe on %r' % galaxy_position)
-        elif mission=='recycle':
-            self.click("css=#missionButton8")
-            logger.warn('Launching recyclers on %r' % galaxy_position)
-        self.click("css=#start > span")
-        self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
-        self.current_page = None
-        if vessels is None :
-            print 'tous les vaisseaux'
 
     def load(self):
         cache_path = get_cache_path(self.user)

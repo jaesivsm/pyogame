@@ -51,6 +51,9 @@ class Resources(object):
             return 0
         return 1
 
+    def __len__(self):
+        return sum(dict(self.__iter__()).values())
+
     def __repr__(self):
         output = []
         for res_type in RES_TYPES:

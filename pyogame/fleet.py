@@ -47,22 +47,29 @@ class Fleet(object):
         if self._ships[ships.ships_id].quantity <= 0:
             del self._ships[ships.ships_id]
 
-    def for_moving(self, quantity):
-        fleet, tmp_quantity = Fleet(), quantity
+    def for_moving(self, resources):
+        fleet, quantity = Fleet(), resources.movable.total
         assert self.capacity >= quantity, 'Too many resources (%r) for fleet' \
                 ' %r with capacity %r' % (quantity, self, self.capacity)
         cmp_func = lambda x,y: cmp(x.capacity, y.capacity)
         for ships in sorted(self, cmp=cmp_func, reverse=True):
             ships = ships.copy()
-            if ships.capacity >= tmp_quantity:
-                nb_ships = tmp_quantity / ships.single_ship_capacity
-                if tmp_quantity % ships.single_ship_capacity:
+            if ships.capacity >= quantity:
+                nb_ships = quantity / ships.single_ship_capacity
+                if quantity % ships.single_ship_capacity:
                     nb_ships += 1
                 ships.quantity = nb_ships
                 fleet.add(ships=ships)
                 return fleet
             fleet.add(ships=ships)
-            tmp_quantity -= ships.capacity
+            quantity -= ships.capacity
+
+    def of_type(self, *args):
+        fleet = Fleet()
+        for ships in self:
+            if isinstance(ships, args):
+                fleet.add(ships=ships)
+        return fleet
 
     @classmethod
     def load(cls, **kwargs):
