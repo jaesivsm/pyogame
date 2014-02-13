@@ -14,10 +14,10 @@ from pyogame.fleet import FlyingFleet
 from pyogame.constructions import BUILDINGS, STATIONS, Constructions
 from pyogame.tools.const import get_cache_path, MISSIONS, MISSIONS_DST
 from pyogame.tools.resources import RES_TYPES, Resources
-from pyogame.routines.common import spy, recycle
 
 logger = logging.getLogger(__name__)
 DEFAULT_WAIT_TIME = 40000
+DEFAULT_JS_SLEEP = 1
 
 
 class Interface(selenium):
@@ -46,7 +46,7 @@ class Interface(selenium):
         self.click("id=loginSubmit")
         self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
-        time.sleep(1)
+        time.sleep(DEFAULT_JS_SLEEP)
         self.server_url = selenium.get_location(self).split('?')[0]
         if not self.load():
             self.discover()
@@ -228,7 +228,7 @@ class Interface(selenium):
         self.click(MISSIONS[mission])
         for res_type, quantity in resources.movable:
             self.type('id=%s' % res_type, quantity)
-        time.sleep(1)
+        time.sleep(DEFAULT_JS_SLEEP)
         sent_fleet.arrival_time = self.get_date('arrivalTime')
         sent_fleet.return_time = self.get_date('returnTime')
 
@@ -238,50 +238,14 @@ class Interface(selenium):
         self.update_planet_resources(src)
         return sent_fleet
 
-    def check_galaxies(self, interface, wideness=0, mission='spy', planet=None):
-        if planet is None:
-            planet = empire.capital
+    def browse_galaxy(self, galaxy, system, planet=None):
         self.go_to(planet, 'galaxy')
-        time.sleep(2)
-        galaxy, syst, place = planet.coords
-        wideness = int(wideness)
-        deb = syst - wideness
-        if deb < 1:
-            deb = 1
-        fin = syst + wideness
-        if fin > 499:
-            fin = 499
-
-        for s in range(deb, fin+1):
-            self.type("id=galaxy_input", galaxy)
-            self.type("id=system_input", s)
-            self.click("id=showbutton")
-            time.sleep(1)
-            if mission=='spy':
-                for i in range(1,17):
-                    pseudo = self.get_table("galaxytable."+ str(i) +".7")
-                    if pseudo.endswith('(i)') or pseudo.endswith('(I)'):
-                        spy(self, planet, [galaxy, s, i-1])
-                        self.go_to(planet, 'galaxy')
-                        self.type("id=galaxy_input", galaxy)
-                        self.type("id=system_input", s)
-                        self.click("id=showbutton")
-                        time.sleep(1)
-            elif mission=='recycle':
-                tri=0
-                source = html.fromstring(self.get_html_source())
-                for tr in source.xpath(
-                        '//table[@id="galaxytable"]//tr'):
-                    tri+=1
-                    tdi=0
-                    for td in tr:
-                        tdi+=1
-                        if tri<5:
-                            continue
-                        if tdi==7 and not td.find_class('js_no_action'):
-                            recycle(self, planet, [galaxy, s, tri-4])
-            self.go_to(planet, 'galaxy')
-            time.sleep(1)
+        self.type("id=galaxy_input", galaxy)
+        self.type("id=system_input", system)
+        self.click("id=showbutton")
+        time.sleep(DEFAULT_JS_SLEEP)
+        source = html.fromstring(self.get_html_source())
+        return source, source.xpath('//table[@id="galaxytable"]//tbody//tr')
 
     def load(self):
         cache_path = get_cache_path(self.user)

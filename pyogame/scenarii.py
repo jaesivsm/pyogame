@@ -6,10 +6,10 @@ from pyogame.empire import empire
 logger = logging.getLogger(__name__)
 
 def probe_idles(interface, wideness) :
-    interface.check_galaxies(interface, wideness, 'spy')
+    interface.check_neighborhood(interface, wideness, 'spy')
 
 def recycle(interface, wideness) :
-    interface.check_galaxies(interface, wideness, 'recycle')
+    interface.check_neighborhood(interface, wideness, 'recycle')
 
 def attack_idles(interface) :
     pass
