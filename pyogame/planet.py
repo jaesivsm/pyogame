@@ -51,14 +51,14 @@ class Planet(object):
     @property
     def to_construct(self):
         to_construct = self.metal_mine
-        if self.deuterium_synthetizer.level < self.metal_mine.level - 4:
+        if self.deuterium_synthetizer.level < self.metal_mine.level - 6:
             to_construct = self.deuterium_synthetizer
         if self.crystal_mine.level < self.metal_mine.level - 2:
             to_construct = self.crystal_mine
         if to_construct.cost.energy > self.resources.energy:
             to_construct = self.solar_plant
         if self.time_to_construct(to_construct.cost) \
-                / float(to_construct.level + 1) > 0.85:  # Fixed by experiment...
+                / float(to_construct.level + 1) > 1:  # Fixed by experiment...
             if self.robot_factory.level < 10:
                 return self.robot_factory
             return self.nanite_factory
