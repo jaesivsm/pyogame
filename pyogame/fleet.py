@@ -4,7 +4,7 @@ import dateutil.parser
 from uuid import uuid4
 
 from pyogame.ships import Ships
-from pyogame.tools.common import Collection
+from pyogame.tools.common import coords_to_key, Collection
 
 logger = logging.getLogger(__name__)
 
@@ -94,8 +94,8 @@ class FlyingFleet(Fleet):
     def __init__(self, src, dst, travel_id=None,
             arrival_time=None, return_time=None):
         super(FlyingFleet, self).__init__()
-        self.src = src
-        self.dst = dst
+        self.src = coords_to_key(src)
+        self.dst = coords_to_key(dst)
         self.travel_id = travel_id if travel_id is not None else str(uuid4())
         if arrival_time is not None \
                 and not isinstance(arrival_time, datetime.datetime):

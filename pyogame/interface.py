@@ -14,8 +14,6 @@ from pyogame.fleet import FlyingFleet
 from pyogame.constructions import BUILDINGS, STATIONS, Constructions
 from pyogame.tools.const import get_cache_path, MISSIONS, MISSIONS_DST
 from pyogame.tools.resources import RES_TYPES, Resources
-from pyogame.ships import Probes, Recycler
-from pyogame.tools.common import coords_to_key
 from pyogame.routines.common import spy, recycle
 
 logger = logging.getLogger(__name__)
@@ -209,13 +207,9 @@ class Interface(selenium):
         assert mission in MISSIONS, \
                 'mission should be among %r' % MISSIONS.keys()
 
-        if isinstance(dst, Planet):
-            dst_key = dst.key
-            dst = dst.coords
-        else:
-            dst_key = coords_to_key(dst)
+        dst = dst.coords if isinstance(dst, Planet) else dst
 
-        sent_fleet = FlyingFleet(src.key, dst_key)
+        sent_fleet = FlyingFleet(src.coords, dst)
         for ships in fleet:
             self.type('id=ship_%d' % ships.ships_id, ships.quantity)
             sent_fleet.add(ships=ships)
@@ -285,7 +279,7 @@ class Interface(selenium):
                         if tri<5:
                             continue
                         if tdi==7 and not td.find_class('js_no_action'):
-                            spy(self, planet, [galaxy, s, tri-4])
+                            recycle(self, planet, [galaxy, s, tri-4])
             self.go_to(planet, 'galaxy')
             time.sleep(1)
 

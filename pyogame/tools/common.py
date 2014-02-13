@@ -1,5 +1,7 @@
 def coords_to_key(coords):
-    return ':'.join([str(coord) for coord in coords])
+    if isinstance(coords, (list, tuple, set)):
+        return ':'.join([str(coord) for coord in coords])
+    return coords
 
 
 class FilterFailed(Exception):
