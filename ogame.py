@@ -14,6 +14,8 @@ if __name__ == "__main__":
     session = tools.load_conf(args.user, logfile, loglevel)
 
     if args.rapatriate:
+        session.update_empire_overall()
+        session.crawl(fleet=True)
         routines.civil.rapatriate(session)
     elif args.construct:
         routines.civil.plan_construction(session)

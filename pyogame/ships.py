@@ -10,7 +10,7 @@ class Ships(object):
     ships_id = None
 
     def __init__(self, ships_id=0, name=None, quantity=0):
-        self.ships_id = ships_id
+        self.ships_id = ships_id if self.ships_id is None else self.ships_id
         self.name = name
         self.quantity = int(quantity)
 

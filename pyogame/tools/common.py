@@ -25,7 +25,7 @@ class Collection(object):
             except FilterFailed:
                 pass
 
-    def _filter(self, *args, **kwargs):
+    def cond(self, *args, **kwargs):
         coll = self.__class__()
         coll._data_dict = self._data_dict
         coll._filters.update(self._filters)
@@ -35,10 +35,18 @@ class Collection(object):
         coll._filters.update(kwargs)
         return coll
 
-    def first(self):  # FIXME ugly
-        elems = list(self)
-        if elems:
-            return elems[0]
+    def copy(self):
+        coll = self.__class__()
+        coll._data_dict.update(self._data_dict)
+        coll._filters.update(self._filters)
+        return coll
+
+    @property
+    def first(self):
+        try:
+            return self.__iter__().next()
+        except StopIteration:
+            return None
 
     def __len__(self):
         return len(list(self.__iter__()))

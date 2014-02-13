@@ -22,23 +22,23 @@ class PlanetCollection(common.Collection):
 
     @property
     def colonies(self):
-        return self._filter(capital=False)
+        return self.cond(capital=False)
 
     @property
     def idles(self):
-        return self._filter(is_idle=True)
+        return self.cond(is_idle=True)
 
     @property
     def with_fleet(self):
-        return self._filter(is_fleet_empty=False)
+        return self.cond(is_fleet_empty=False)
 
     @property
     def waiting(self):
-        return self._filter(is_waiting=True)
+        return self.cond(is_waiting=True)
 
     @property
     def capital(self):
-        return list(self._filter(capital=True))[0]
+        return self.cond(capital=True).first
 
     @property
     def fleet(self):

@@ -9,14 +9,12 @@ from pyogame.tools.common import coords_to_key, Collection
 logger = logging.getLogger(__name__)
 
 
-class Fleet(object):
+class Fleet(Collection):
 
     def __init__(self):
         self._ships = {}
         self.clear = self._ships.clear
-
-    def __iter__(self):
-        return iter(self._ships.values())
+        super(Fleet, self).__init__(self._ships)
 
     @property
     def capacity(self):
@@ -24,11 +22,7 @@ class Fleet(object):
 
     @property
     def transports(self):
-        fleet = Fleet()
-        for ships in self:
-            if ships.are_transport:
-                fleet.add(ships=ships)
-        return fleet
+        return self.cond(are_transport=True)
 
     def add(self, ships_id=0, ships=None, **kwargs):
         if ships is None:
@@ -84,9 +78,6 @@ class Fleet(object):
 
     def __len__(self):
         return sum([ships.quantity for ships in self])
-
-    def __repr__(self):
-        return repr(','.join([repr(ships) for ships in self]))
 
 
 class FlyingFleet(Fleet):
@@ -149,11 +140,11 @@ class Missions(Collection):
 
     @property
     def arrived(self):
-        return self._filter(is_arrived=True)
+        return self.cond(is_arrived=True)
 
     @property
     def returned(self):
-        return self._filter(is_returned=True)
+        return self.cond(is_returned=True)
 
     @classmethod
     def load(cls, **kwargs):
