@@ -8,12 +8,14 @@ from lxml import html
 from selenium import selenium
 from datetime import datetime
 
+
 from pyogame.empire import empire
 from pyogame.planet import Planet
 from pyogame.fleet import FlyingFleet
 from pyogame.constructions import BUILDINGS, STATIONS, Constructions
 from pyogame.tools.const import get_cache_path, MISSIONS, MISSIONS_DST
 from pyogame.tools.resources import RES_TYPES, Resources
+from pyogame.tools.common import GalaxyRow
 
 logger = logging.getLogger(__name__)
 DEFAULT_WAIT_TIME = 40000
@@ -245,7 +247,25 @@ class Interface(selenium):
         self.click("id=showbutton")
         time.sleep(DEFAULT_JS_SLEEP)
         source = html.fromstring(self.get_html_source())
-        return source, source.xpath('//table[@id="galaxytable"]//tbody//tr')
+        for position, row in enumerate(
+                source.xpath('//table[@id="galaxytable"]//tbody//tr')):
+            inactive = row.find_class('status_abbr_inactive') \
+                    or row.find_class('status_abbr_longinactive')
+            vacation = bool(row.find_class('status_abbr_vacation'))
+            noob = bool(row.find_class('status_abbr_noob'))
+            debris_class = row.find_class('debris')[0].attrib['class'].strip()
+            debris = False if 'js_no_action' in debris_class else True
+            recyclers = 0
+            if debris:
+                for css_class in debris_class.split():
+                    if css_class.startswith('js_debris'):
+                        continue
+                    elem = source.get_element_by_id(css_class[3:])
+                    recyclers = elem.find_class('debris-recyclers')[0].text
+                    recyclers = int(recyclers.split()[-1])
+                    break
+            yield GalaxyRow(position+1, inactive, vacation, noob,
+                    debris, recyclers)
 
     def load(self):
         cache_path = get_cache_path(self.user)

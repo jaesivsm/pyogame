@@ -1,3 +1,9 @@
+from collections import namedtuple
+
+GalaxyRow = namedtuple("GalaxyRow",
+        ['postition', 'inactive', 'vacation', 'noob', 'debris', 'recyclers'])
+
+
 def coords_to_key(coords):
     if isinstance(coords, (list, tuple, set)):
         return ':'.join([str(coord) for coord in coords])
