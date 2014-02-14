@@ -249,10 +249,12 @@ class Interface(selenium):
         source = html.fromstring(self.get_html_source())
         for position, row in enumerate(
                 source.xpath('//table[@id="galaxytable"]//tbody//tr')):
-            inactive = row.find_class('status_abbr_inactive') \
-                    or row.find_class('status_abbr_longinactive')
-            vacation = bool(row.find_class('status_abbr_vacation'))
-            noob = bool(row.find_class('status_abbr_noob'))
+            if row.find_class('planetEmpty'):
+                continue
+            inactive = row.find_class('inactive') \
+                    or row.find_class('longinactive')
+            vacation = bool(row.find_class('vacation'))
+            noob = bool(row.find_class('noob'))
             debris_class = row.find_class('debris')[0].attrib['class'].strip()
             debris = False if 'js_no_action' in debris_class else True
             recyclers = 0
