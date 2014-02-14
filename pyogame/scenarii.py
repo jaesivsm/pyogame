@@ -2,14 +2,15 @@
 import logging
 
 from pyogame.empire import empire
+from pyogame.routines import guerrilla
 
 logger = logging.getLogger(__name__)
 
 def probe_idles(interface, wideness) :
-    interface.check_neighborhood(interface, wideness, 'spy')
+    guerrilla.check_neighborhood(interface, wideness, 'spy')
 
 def recycle(interface, wideness) :
-    interface.check_neighborhood(interface, wideness, 'recycle')
+    guerrilla.check_neighborhood(interface, wideness, 'recycle')
 
 def attack_idles(interface) :
     pass
