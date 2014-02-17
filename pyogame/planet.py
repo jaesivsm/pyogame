@@ -58,7 +58,7 @@ class Planet(object):
         if to_construct.cost.energy > self.resources.energy:
             to_construct = self.solar_plant
         if self.time_to_construct(to_construct.cost) \
-                / float(to_construct.level + 1) > 1:  # Fixed by experiment...
+                / float(to_construct.level + 1) > 1.25:  # Fixed by experiment
             if self.robot_factory.level < 10:
                 return self.robot_factory
             return self.nanite_factory
