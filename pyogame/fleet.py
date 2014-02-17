@@ -4,19 +4,17 @@ import dateutil.parser
 from uuid import uuid4
 
 from pyogame.ships import Ships
-from pyogame.tools.common import Collection
+from pyogame.tools.common import coords_to_key, Collection
 
 logger = logging.getLogger(__name__)
 
 
-class Fleet(object):
+class Fleet(Collection):
 
     def __init__(self):
         self._ships = {}
         self.clear = self._ships.clear
-
-    def __iter__(self):
-        return iter(self._ships.values())
+        super(Fleet, self).__init__(self._ships)
 
     @property
     def capacity(self):
@@ -24,11 +22,7 @@ class Fleet(object):
 
     @property
     def transports(self):
-        fleet = Fleet()
-        for ships in self:
-            if ships.are_transport:
-                fleet.add(ships=ships)
-        return fleet
+        return self.cond(are_transport=True)
 
     def add(self, ships_id=0, ships=None, **kwargs):
         if ships is None:
@@ -47,22 +41,29 @@ class Fleet(object):
         if self._ships[ships.ships_id].quantity <= 0:
             del self._ships[ships.ships_id]
 
-    def for_moving(self, quantity):
-        fleet, tmp_quantity = Fleet(), quantity
+    def for_moving(self, resources):
+        fleet, quantity = Fleet(), resources.movable.total
         assert self.capacity >= quantity, 'Too many resources (%r) for fleet' \
                 ' %r with capacity %r' % (quantity, self, self.capacity)
         cmp_func = lambda x,y: cmp(x.capacity, y.capacity)
         for ships in sorted(self, cmp=cmp_func, reverse=True):
             ships = ships.copy()
-            if ships.capacity >= tmp_quantity:
-                nb_ships = tmp_quantity / ships.single_ship_capacity
-                if tmp_quantity % ships.single_ship_capacity:
+            if ships.capacity >= quantity:
+                nb_ships = quantity / ships.single_ship_capacity
+                if quantity % ships.single_ship_capacity:
                     nb_ships += 1
                 ships.quantity = nb_ships
                 fleet.add(ships=ships)
                 return fleet
             fleet.add(ships=ships)
-            tmp_quantity -= ships.capacity
+            quantity -= ships.capacity
+
+    def of_type(self, *args):
+        fleet = Fleet()
+        for ships in self:
+            if isinstance(ships, args):
+                fleet.add(ships=ships)
+        return fleet
 
     @classmethod
     def load(cls, **kwargs):
@@ -78,17 +79,14 @@ class Fleet(object):
     def __len__(self):
         return sum([ships.quantity for ships in self])
 
-    def __repr__(self):
-        return repr(','.join([repr(ships) for ships in self]))
-
 
 class FlyingFleet(Fleet):
 
     def __init__(self, src, dst, travel_id=None,
             arrival_time=None, return_time=None):
         super(FlyingFleet, self).__init__()
-        self.src = src
-        self.dst = dst
+        self.src = coords_to_key(src)
+        self.dst = coords_to_key(dst)
         self.travel_id = travel_id if travel_id is not None else str(uuid4())
         if arrival_time is not None \
                 and not isinstance(arrival_time, datetime.datetime):
@@ -142,11 +140,11 @@ class Missions(Collection):
 
     @property
     def arrived(self):
-        return self._filter(is_arrived=True)
+        return self.cond(is_arrived=True)
 
     @property
     def returned(self):
-        return self._filter(is_returned=True)
+        return self.cond(is_returned=True)
 
     @classmethod
     def load(cls, **kwargs):

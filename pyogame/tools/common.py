@@ -1,5 +1,13 @@
+from collections import namedtuple
+
+GalaxyRow = namedtuple("GalaxyRow",
+        ['postition', 'inactive', 'vacation', 'noob', 'debris', 'recyclers'])
+
+
 def coords_to_key(coords):
-    return ':'.join([str(coord) for coord in coords])
+    if isinstance(coords, (list, tuple, set)):
+        return ':'.join([str(coord) for coord in coords])
+    return coords
 
 
 class FilterFailed(Exception):
@@ -23,7 +31,7 @@ class Collection(object):
             except FilterFailed:
                 pass
 
-    def _filter(self, *args, **kwargs):
+    def cond(self, *args, **kwargs):
         coll = self.__class__()
         coll._data_dict = self._data_dict
         coll._filters.update(self._filters)
@@ -32,6 +40,19 @@ class Collection(object):
                 coll._filters.update(arg)
         coll._filters.update(kwargs)
         return coll
+
+    def copy(self):
+        coll = self.__class__()
+        coll._data_dict.update(self._data_dict)
+        coll._filters.update(self._filters)
+        return coll
+
+    @property
+    def first(self):
+        try:
+            return self.__iter__().next()
+        except StopIteration:
+            return None
 
     def __len__(self):
         return len(list(self.__iter__()))

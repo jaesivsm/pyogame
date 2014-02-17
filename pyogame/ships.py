@@ -10,7 +10,7 @@ class Ships(object):
     ships_id = None
 
     def __init__(self, ships_id=0, name=None, quantity=0):
-        self.ships_id = ships_id
+        self.ships_id = ships_id if self.ships_id is None else self.ships_id
         self.name = name
         self.quantity = int(quantity)
 
@@ -45,22 +45,24 @@ class PTs(Ships):
     xpath = "//ul[@id='civil']/li[1]/div/a"
     ships_id = 202
 
+
 class GTs(Ships):
     single_ship_capacity = 25000
     are_transport = True
     xpath = "//ul[@id='civil']/li[2]/div/a"
     ships_id = 203
 
+
 class Probes(Ships):
     single_ship_capacity = 5
-    are_transport = False
     xpath = "//ul[@id='civil']/li[5]/div/a"
     ships_id = 210
 
+
 class Recycler(Ships):
     single_ship_capacity = 20000
-    are_transport = False
     xpath = "//ul[@id='civil']/li[4]/div/a"
     ships_id = 209
+
 
 SHIPS_TYPES = {203: GTs, 202: PTs, 210: Probes, 209: Recycler}

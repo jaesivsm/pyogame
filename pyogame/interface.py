@@ -8,17 +8,18 @@ from lxml import html
 from selenium import selenium
 from datetime import datetime
 
+
 from pyogame.empire import empire
 from pyogame.planet import Planet
 from pyogame.fleet import FlyingFleet
 from pyogame.constructions import BUILDINGS, STATIONS, Constructions
-from pyogame.tools.const import get_cache_path
-from pyogame.tools.resources import RES_TYPES
-from pyogame.ships import Probes, Recycler
-from pyogame.tools.common import coords_to_key
+from pyogame.tools.const import get_cache_path, MISSIONS, MISSIONS_DST
+from pyogame.tools.resources import RES_TYPES, Resources
+from pyogame.tools.common import GalaxyRow
 
 logger = logging.getLogger(__name__)
 DEFAULT_WAIT_TIME = 40000
+DEFAULT_JS_SLEEP = 1
 
 
 class Interface(selenium):
@@ -47,7 +48,7 @@ class Interface(selenium):
         self.click("id=loginSubmit")
         self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
-        time.sleep(1)
+        time.sleep(DEFAULT_JS_SLEEP)
         self.server_url = selenium.get_location(self).split('?')[0]
         if not self.load():
             self.discover()
@@ -197,146 +198,76 @@ class Interface(selenium):
                 self.update_planet_fleet(planet)
         return self.current_planet, self.current_page
 
-    def send_resources(self, src, dst, all_ships=False, resources=None):
+    def get_date(self, css_id):
+        date =  re.split('[\.: ]', self.get_text("//span[@id='%s']" % css_id))
+        day, month, year, hour, minute, second = [int(i) for i in date]
+        return datetime(year + 2000, month, day, hour, minute, second)
+
+    def send_fleet(self, src, dst, mission, fleet,
+            resources=Resources(), dtype='planet'):
         self.go_to(src, 'fleet1')
-        if not src.fleet.transports:
-            logger.warn("No ships on %r, can't move resources" % src)
-            return
+        assert mission in MISSIONS, \
+                'mission should be among %r' % MISSIONS.keys()
 
-        dst_key = coords_to_key(dst.coords if isinstance(dst, Planet) else dst)
-        sent_fleet = FlyingFleet(coords_to_key(src.coords), dst_key)
-        if all_ships:
-            for ships in src.fleet.transports:
-                self.click(ships.xpath)
-                sent_fleet.add(ships=ships)
-            src.fleet.clear()
-        else:
-            for ships in src.fleet.transports.for_moving(resources.total):
-                self.type('id=ship_%d' % ships.ships_id, ships.quantity)
-                sent_fleet.add(ships=ships)
-                src.fleet.remove(ships=ships)
+        dst = dst.coords if isinstance(dst, Planet) else dst
+
+        sent_fleet = FlyingFleet(src.coords, dst)
+        for ships in fleet:
+            self.type('id=ship_%d' % ships.ships_id, ships.quantity)
+            sent_fleet.add(ships=ships)
+            src.fleet.remove(ships=ships)
 
         self.click("css=#continue > span")
         self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
-        self.type("id=galaxy", dst.coords[0])
-        self.type("id=system", dst.coords[1])
-        self.type("id=position", dst.coords[2])
-        self.click("id=pbutton")
+        self.type("id=galaxy", dst[0])
+        self.type("id=system", dst[1])
+        self.type("id=position", dst[2])
+        self.click(MISSIONS_DST[dtype])
         self.click("css=#continue > span")
         self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
-        self.click("css=#missionButton3")
-        if not resources:
-            self.click("css=#allresources > img")
-        else:
-            for res_type, quantity in resources.movable:
-                self.type('id=%s' % res_type, quantity)
-        time.sleep(1)
-        day, month, year, hour, minute, second = [int(i) for i in
-                re.split('[\.: ]', self.get_text("//span[@id='arrivalTime']"))]
-        arrival_time = datetime(year + 2000, month, day, hour, minute, second)
-        day, month, year, hour, minute, second = [int(i) for i in
-                re.split('[\.: ]', self.get_text("//span[@id='returnTime']"))]
-        return_time = datetime(year + 2000, month, day, hour, minute, second)
-
-        resources = repr(resources.movable) \
-                if resources else 'all resources (%r)' % src.resources.movable
-        logger.warn('Moving %s from %r to %r arriving at %s'
-                % (resources, src, dst, arrival_time.isoformat()))
-        sent_fleet.arrival_time = arrival_time
-        sent_fleet.return_time = return_time
+        self.click(MISSIONS[mission])
+        for res_type, quantity in resources.movable:
+            self.type('id=%s' % res_type, quantity)
+        time.sleep(DEFAULT_JS_SLEEP)
+        sent_fleet.arrival_time = self.get_date('arrivalTime')
+        sent_fleet.return_time = self.get_date('returnTime')
 
         self.click("css=#start > span")
         self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
         self.current_page = None
         self.update_planet_resources(src)
-        return empire.missions.add(sent_fleet)
+        return sent_fleet
 
-    def check_galaxies(self, interface, wideness=0, mission='spy', planet=None):
-        if planet is None:
-            planet = empire.capital
+    def browse_galaxy(self, galaxy, system, planet=None):
         self.go_to(planet, 'galaxy')
-        time.sleep(2)
-        galaxy, syst, place = planet.coords
-        wideness = int(wideness)
-        deb = syst - wideness
-        if deb < 1:
-            deb = 1
-        fin = syst + wideness
-        if fin > 499:
-            fin = 499
-
-        for s in range(deb, fin+1):
-            self.type("id=galaxy_input", galaxy)
-            self.type("id=system_input", s)
-            self.click("id=showbutton")
-            time.sleep(1)
-            if mission=='spy':
-                for i in range(1,17):
-                    pseudo = self.get_table("galaxytable."+ str(i) +".7")
-                    if pseudo.endswith('(i)') or pseudo.endswith('(I)'):
-                        self.send_fleet(interface,[galaxy, s, i-1],(Probes),
-                                mission,planet)
-                        self.go_to(planet, 'galaxy')
-                        self.type("id=galaxy_input", galaxy)
-                        self.type("id=system_input", s)
-                        self.click("id=showbutton")
-                        time.sleep(1)
-            elif mission=='recycle':
-                tri=0
-                source = html.fromstring(self.get_html_source())
-                for tr in source.xpath(
-                        '//table[@id="galaxytable"]//tr'):
-                    tri+=1
-                    tdi=0
-                    for td in tr:
-                        tdi+=1
-                        if tri<5:
-                            continue
-                        if tdi==7 and not td.find_class('js_no_action'):
-                            self.send_fleet(interface,[galaxy, s, tri-4],
-                                    (Recycler),mission,planet)
-            self.go_to(planet, 'galaxy')
-            time.sleep(1)
-
-    def send_fleet(self, interface, galaxy_position, vessels = None,
-            mission = 'transport', planet = None):
-        if planet is None:
-            planet = empire.capital
-        self.go_to(planet, 'fleet1')
-        for vessel in planet.fleet:
-            if vessels is not None and isinstance(vessel, vessels):
-                number=0
-                if mission=='spy':
-                    number=1
-                if mission=='recycle':
-                    number=2
-                self.type('id=ship_%d' % vessel.ships_id, number)
-        self.click("css=#continue > span")
-        self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
-
-        self.type("id=galaxy", galaxy_position[0])
-        self.type("id=system", galaxy_position[1])
-        self.type("id=position", galaxy_position[2])
-        if mission=='recycle':
-            self.click("id=dbutton")
-        else:
-            self.click("id=pbutton")
-        self.click("css=#continue > span")
-        self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
-
-        if mission == 'spy':
-            self.click("css=#missionButton6")
-            logger.warn('Launching probe on %r' % galaxy_position)
-        elif mission=='recycle':
-            self.click("css=#missionButton8")
-            logger.warn('Launching recyclers on %r' % galaxy_position)
-        self.click("css=#start > span")
-        self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
-        self.current_page = None
-        if vessels is None :
-            print 'tous les vaisseaux'
+        self.type("id=galaxy_input", galaxy)
+        self.type("id=system_input", system)
+        self.click("id=showbutton")
+        time.sleep(DEFAULT_JS_SLEEP)
+        source = html.fromstring(self.get_html_source())
+        for position, row in enumerate(
+                source.xpath('//table[@id="galaxytable"]//tbody//tr')):
+            if row.find_class('planetEmpty'):
+                continue
+            inactive = row.find_class('inactive') \
+                    or row.find_class('longinactive')
+            vacation = bool(row.find_class('vacation'))
+            noob = bool(row.find_class('noob'))
+            debris_class = row.find_class('debris')[0].attrib['class'].strip()
+            debris = False if 'js_no_action' in debris_class else True
+            recyclers = 0
+            if debris:
+                for css_class in debris_class.split():
+                    if css_class.startswith('js_debris'):
+                        continue
+                    elem = source.get_element_by_id(css_class[3:])
+                    recyclers = elem.find_class('debris-recyclers')[0].text
+                    recyclers = int(recyclers.split()[-1])
+                    break
+            yield GalaxyRow(position+1, inactive, vacation, noob,
+                    debris, recyclers)
 
     def load(self):
         cache_path = get_cache_path(self.user)

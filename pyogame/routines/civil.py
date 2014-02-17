@@ -2,6 +2,7 @@
 import logging
 
 from pyogame.empire import empire
+from pyogame.routines.common import transport
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +30,8 @@ def rapatriate(interface, destination=None):
         if float(source.resources.total) / source.fleet.capacity < 2. / 3:
             logger.debug('not enough resources on %r to bother repatriating'
                     % source)
-            continue
-        interface.send_resources(source, destination, all_ships=True)
+            #continue
+        transport(interface, source, destination, all_ships=True)
 
 
 def plan_construction(interface):
@@ -50,7 +51,7 @@ def plan_construction(interface):
 
         logger.warn('Sending resources to construct %r on %r'
                 % (planet.to_construct, planet))
-        travel_id = interface.send_resources(empire.capital, planet,
+        travel_id = transport(interface, empire.capital, planet,
                 resources=planet.to_construct.cost)
 
         planet.waiting_for[travel_id] = planet.to_construct.name()

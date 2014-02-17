@@ -7,3 +7,13 @@ def get_cache_path(user):
 
 CONF_PATH = os.path.abspath(os.path.expanduser('conf.json'))
 LOGFILE = os.path.abspath(os.path.expanduser('~/ogame.log'))
+
+MISSIONS = {
+        'transport': 'css=#missionButton3',
+        'spy': 'css=#missionButton6',
+        'recycle': 'css=#missionButton8',
+}
+MISSIONS_DST = {
+        'planet': 'id=pbutton',
+        'debris': 'id=dbutton',
+}
