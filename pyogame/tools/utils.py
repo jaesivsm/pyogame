@@ -24,7 +24,7 @@ def parse_args():
             action='store_true', default=False)
     # send probs around
     parser.add_argument('-p', '--probes', dest='probes',
-            action='store', default=0)
+            action='store', type=int, default=0)
     # build a specific building on a specific planet
     parser.add_argument('-b', '--build', dest='build',
             action='store', default=False)
@@ -32,7 +32,7 @@ def parse_args():
             action='store_true', default=False)
     # send recyclers if fields exist
     parser.add_argument('-y', '--recycle', dest='recycle',
-            action='store', default=0)
+            action='store', type=int, default=0)
     args = parser.parse_args()
     if args.quiet:
         loglevel = logging.ERROR

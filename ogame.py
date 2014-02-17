@@ -13,23 +13,25 @@ if __name__ == "__main__":
 
     session = tools.load_conf(args.user, logfile, loglevel)
 
+    session.update_empire_overall()
     if args.rapatriate:
-        session.update_empire_overall()
         session.crawl(fleet=True)
         routines.civil.rapatriate(session)
-    elif args.construct:
+    if args.construct:
         routines.civil.plan_construction(session)
-    elif args.probes:
+    if args.probes:
+        session.crawl(fleet=True)
         scenarii.probe_idles(session, args.probes)
-    elif args.recycle:
+    if args.recycle:
+        session.crawl(fleet=True)
         scenarii.recycle(session, args.recycle)
-    elif args.idles :
+    if args.idles:
         scenarii.attack_idles(session)
-    elif args.build:
+    if args.build:
         scenarii.specific_construction(session, args.build)
-    else:
+    if not (args.rapatriate or args.construct or args.probes
+            or args.recycle or args.idles or args.build):
         session.crawl(building=True, fleet=True, station=True)
-        session.update_empire_overall()
         routines.civil.in_place_empire_upgrade(session)
         routines.civil.resources_reception_and_construction(session)
         routines.civil.rapatriate(session)

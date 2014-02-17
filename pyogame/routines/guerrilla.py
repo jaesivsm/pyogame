@@ -11,9 +11,7 @@ END_GAL = 499
 def check_neighborhood(interface, area=1, mission='both', planet=None):
     if planet is None:
         planet = empire.capital
-    interface.crawl(fleet=True)
     galaxy, system, place = planet.coords
-    area = int(area)
     start = system - area if system - area >= START_GAL else START_GAL
     end = system + area if system + area <= END_GAL else END_GAL
 
