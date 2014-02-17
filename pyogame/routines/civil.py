@@ -41,11 +41,10 @@ def plan_construction(interface):
         if not planet:
             logger.debug("No eligible planet for construction")
             break
-        if not planet.to_construct.cost.movable < source.resources:
+        if source.resources.movable < planet.to_construct.cost.movable:
             logger.debug("Not enough ressources on %r" % source)
             break
-        if not planet.to_construct.cost.movable.total < \
-                empire.capital.fleet.capacity:
+        if source.fleet.capacity < planet.to_construct.cost.movable.total:
             logger.debug("Fleet capacity too low on %r" % source)
             break
 

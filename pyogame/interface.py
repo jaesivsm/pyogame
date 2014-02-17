@@ -147,7 +147,8 @@ class Interface(selenium):
             coords = [int(coord) for coord in coords.split(':')]
             empire.add(Planet(name, coords, position + 1))
 
-    def crawl(self, building=False, station=False, fleet=False, resources=True):
+    def crawl(self,
+            building=False, station=False, fleet=False, resources=True):
         noc = lambda x: None
         update_funcs = {
                 'resources': self.update_planet_buildings if building else noc,
