@@ -99,6 +99,3 @@ STATIONS = {
         0: RobotFactory,
         5: NaniteFactory,
 }
-
-
-

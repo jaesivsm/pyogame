@@ -83,4 +83,5 @@ class PlanetCollection(common.Collection):
         return {'planets': [planet.dump() for planet in self],
                 'missions': self.missions.dump()}
 
+
 empire = PlanetCollection()

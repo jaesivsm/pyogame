@@ -289,5 +289,3 @@ class Interface(selenium):
         handler = lambda o: o.isoformat() if isinstance(o, datetime) else None
         with open(get_cache_path(self.user), 'w') as fp:
             json.dump(empire.dump(), fp, default=handler)
-
-# vim: set et sts=4 sw=4 tw=120:

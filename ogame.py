@@ -7,7 +7,6 @@ Outil en ligne de commande pour inscrire des actions
 from pyogame import tools, scenarii, routines
 
 
-
 if __name__ == "__main__":
     args, logfile, loglevel = tools.parse_args()
 
