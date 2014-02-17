@@ -261,7 +261,7 @@ class Interface(selenium):
             recyclers = 0
             if debris:
                 for css_class in debris_class.split():
-                    if css_class.startswith('js_debris'):
+                    if not css_class.startswith('js_debris'):
                         continue
                     elem = source.get_element_by_id(css_class[3:])
                     recyclers = elem.find_class('debris-recyclers')[0].text
