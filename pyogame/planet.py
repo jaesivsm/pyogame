@@ -28,6 +28,7 @@ class Planet(object):
             setattr(self, construction.name(),
                     construction(kwargs.get(construction.name(), 0)))
 
+    @property
     def key(self):
         return coords_to_key(self.coords)
 

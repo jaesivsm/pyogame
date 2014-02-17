@@ -63,7 +63,8 @@ def resources_reception_and_construction(interface):
     for fleet in empire.missions.arrived:
         if not fleet.travel_id in empire.waiting_for:
             continue  # no one cares about this fleet
-        planet = empire.planets[fleet.dst]
+        planet = empire.cond(key=fleet.dst).first
+        assert planet, "no planet at %s" % fleet.dst
         if not planet.idle:  # construction has began
             continue
         if not fleet.dst in waited_constructs:
