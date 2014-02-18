@@ -177,6 +177,7 @@ class Interface(selenium):
         self.click(construction.css_dom)
         self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
         self.update_empire_overall()
+        self.update_planet_resources(planet)
 
     def go_to(self, planet=None, page=None, update=True):
         if planet is not None and self.current_planet is not planet:
