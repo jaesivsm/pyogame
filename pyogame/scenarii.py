@@ -7,14 +7,6 @@ from pyogame.routines import guerrilla
 logger = logging.getLogger(__name__)
 
 
-def probe_idles(interface, wideness) :
-    guerrilla.check_neighborhood(interface, wideness, 'spy')
-
-
-def recycle(interface, wideness) :
-    guerrilla.check_neighborhood(interface, wideness, 'recycle')
-
-
 def attack_idles(interface) :
     pass
 

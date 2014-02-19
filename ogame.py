@@ -20,10 +20,14 @@ if __name__ == "__main__":
         routines.civil.plan_construction(session)
     if args.probes:
         session.crawl(fleet=True)
-        scenarii.probe_idles(session, args.probes)
+        routines.guerrilla.check_neighborhood(session,
+                [args.area_start, args.area_end],
+                routines.guerrilla.SPY)
     if args.recycle:
         session.crawl(fleet=True)
-        scenarii.recycle(session, args.recycle)
+        routines.guerrilla.check_neighborhood(session,
+                [args.area_start, args.area_end],
+                routines.guerrilla.RECYCLE)
     if args.idles:
         scenarii.attack_idles(session)
     if args.build:
