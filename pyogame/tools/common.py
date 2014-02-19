@@ -50,7 +50,7 @@ class Collection(object):
     @property
     def first(self):
         try:
-            return self.__iter__().next()
+            return next(self.__iter__())
         except StopIteration:
             return None
 

@@ -28,7 +28,7 @@ class Resources(object):
                 'deuterium': self.deuterium, 'energy': self.energy}
 
     def __iter__(self):
-        for res_type, amount in self.__dict__.items():
+        for res_type, amount in vars(self).items():
             yield res_type, amount
 
     def __getitem__(self, key):
