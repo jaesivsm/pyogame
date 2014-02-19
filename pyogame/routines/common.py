@@ -37,13 +37,11 @@ def spy(interface, src, dst, nb_probe=1):
     return empire.missions.add(fleet=sent_fleet)
 
 
-def recycle(interface, src, dst, nb_recycler=2):
+def recycle(interface, src, dst, debris_content):
     fleet = src.fleet.of_type(Recycler).copy()
-    assert fleet.first and nb_recycler <= fleet.first.quantity, \
-            'not enough recyclers on %r' % src
-    fleet.first.quantity = nb_recycler
-    sent_fleet = interface.send_fleet(src, dst,
-            'recycle', fleet, dtype='debris')
+    assert fleet.first, 'no recyclers on %r' % src
+    sent_fleet = interface.send_fleet(src, dst, 'recycle',
+            fleet.of_type(Recycler).for_moving(debris_content), dtype='debris')
     logging.warn('Going to recycle debris at %r (arriving at %r)'
             % (dst, sent_fleet.arrival_time))
     return empire.missions.add(fleet=sent_fleet)

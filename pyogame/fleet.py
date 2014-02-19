@@ -43,8 +43,11 @@ class Fleet(Collection):
 
     def for_moving(self, resources):
         fleet, quantity = Fleet(), resources.movable.total
-        assert self.capacity >= quantity, 'Too many resources (%r) for fleet' \
-                ' %r with capacity %r' % (quantity, self, self.capacity)
+        assert self, 'fleet is empty !'
+        if self.capacity < quantity:
+            logger.error('Too many resources (%r) for fleet %r with capacity %r'
+                    % (quantity, self, self.capacity))
+            return self
         cmp_func = lambda x,y: cmp(x.capacity, y.capacity)
         for ships in sorted(self, cmp=cmp_func, reverse=True):
             ships = ships.copy()

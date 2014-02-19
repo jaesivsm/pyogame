@@ -1,7 +1,7 @@
 from collections import namedtuple
 
 GalaxyRow = namedtuple("GalaxyRow",
-        ['postition', 'inactive', 'vacation', 'noob', 'debris', 'recyclers'])
+        ['coords', 'inactive', 'vacation', 'noob', 'debris', 'debris_content'])
 
 
 def coords_to_key(coords):

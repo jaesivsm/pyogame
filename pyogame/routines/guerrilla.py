@@ -4,22 +4,22 @@ from pyogame.empire import empire
 from pyogame.routines.common import spy, recycle
 
 logger = logging.getLogger(__name__)
-START_GAL = 1
-END_GAL = 499
 
 
-def check_neighborhood(interface, area=1, mission='both', planet=None):
+def check_neighborhood(interface, area=[0, 20], mission='both', planet=None):
     if planet is None:
         planet = empire.capital
-    galaxy, system, place = planet.coords
-    start = system - area if system - area >= START_GAL else START_GAL
-    end = system + area if system + area <= END_GAL else END_GAL
+    galaxy, system_origin, position = planet.coords
 
-    for system in range(start, end+1):
-        for row in interface.browse_galaxy(galaxy, system, planet):
-            if mission in ('spy', 'both') and row.inactive \
-                    and not (row.vacation or row.noob):
-                spy(interface, planet, [galaxy, system, row.postition])
-            if mission in ('recycle', 'both') and row.debris:
-                recycle(interface, planet, [galaxy, system, row.postition],
-                        row.recyclers)
+    for distance in range(*area):
+        for factor in (1, -1):
+            system = system_origin + distance * factor
+            if not 0 <= system <= 500:
+                pass
+            for row in interface.browse_galaxy(galaxy, system, planet):
+                if mission in ('spy', 'both') and row.inactive \
+                        and not (row.vacation or row.noob):
+                    spy(interface, planet, row.coords)
+                if mission in ('recycle', 'both') \
+                        and row.debris_content.total > 20000:
+                    recycle(interface, planet, row.coords, row.debris_content)

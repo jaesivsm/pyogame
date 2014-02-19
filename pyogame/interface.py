@@ -244,6 +244,7 @@ class Interface(selenium):
 
     def browse_galaxy(self, galaxy, system, planet=None):
         self.go_to(planet, 'galaxy')
+        logger.info('Browsing system %r on galaxy %r' % (system, galaxy))
         self.type("id=galaxy_input", galaxy)
         self.type("id=system_input", system)
         self.click("id=showbutton")
@@ -259,17 +260,19 @@ class Interface(selenium):
             noob = bool(row.find_class('noob'))
             debris_class = row.find_class('debris')[0].attrib['class'].strip()
             debris = False if 'js_no_action' in debris_class else True
-            recyclers = 0
+            debris_content = Resources()
             if debris:
                 for css_class in debris_class.split():
                     if not css_class.startswith('js_debris'):
                         continue
                     elem = source.get_element_by_id(css_class[3:])
-                    recyclers = elem.find_class('debris-recyclers')[0].text
-                    recyclers = int(recyclers.split()[-1])
+                    content = elem.find_class('debris-content')
+                    metal = ''.join(content[0].text.split()[-1].split('.'))
+                    crystal = ''.join(content[1].text.split()[-1].split('.'))
+                    debris_content = Resources(metal=metal, crystal=crystal)
                     break
-            yield GalaxyRow(position+1, inactive, vacation, noob,
-                    debris, recyclers)
+            yield GalaxyRow([galaxy, system, position+1],
+                    inactive, vacation, noob, debris, debris_content)
 
     def load(self):
         cache_path = get_cache_path(self.user)
