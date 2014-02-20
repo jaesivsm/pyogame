@@ -85,7 +85,7 @@ class Fleet(Collection):
 
 class FlyingFleet(Fleet):
 
-    def __init__(self, src, dst, travel_id=None,
+    def __init__(self, src, dst, flight_type=None, travel_id=None,
             arrival_time=None, return_time=None):
         super(FlyingFleet, self).__init__()
         self.src = coords_to_key(src)
@@ -97,6 +97,7 @@ class FlyingFleet(Fleet):
         if return_time is not None \
                 and not isinstance(return_time, datetime.datetime):
             return_time = dateutil.parser.parse(return_time)
+        self.flight_type = flight_type
         self.arrival_time = arrival_time
         self.return_time = return_time
 
@@ -111,6 +112,7 @@ class FlyingFleet(Fleet):
     def dump(self):
         dump = super(FlyingFleet, self).dump()
         dump.update({'travel_id': self.travel_id,
+                'flight_type': self.flight_type,
                 'src': self.dst, 'arrival_time': self.arrival_time,
                 'dst': self.src, 'return_time': self.return_time,
         })

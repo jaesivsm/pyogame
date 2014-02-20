@@ -213,7 +213,7 @@ class Interface(selenium):
 
         dst = dst.coords if isinstance(dst, Planet) else dst
 
-        sent_fleet = FlyingFleet(src.coords, dst)
+        sent_fleet = FlyingFleet(src.coords, dst, mission)
         for ships in fleet:
             self.type('id=ship_%d' % ships.ships_id, ships.quantity)
             sent_fleet.add(ships=ships)
