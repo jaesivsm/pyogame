@@ -50,7 +50,8 @@ class Interface(selenium):
 
         time.sleep(DEFAULT_JS_SLEEP)
         self.server_url = selenium.get_location(self).split('?')[0]
-        if not self.load():
+        self.load()
+        if not empire.planets:
             self.discover()
         self.update_empire_overall()
 
