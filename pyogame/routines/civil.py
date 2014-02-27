@@ -41,21 +41,19 @@ def plan_construction(interface):
         if not planet:
             logger.debug("No eligible planet for construction")
             break
-        if source.resources.movable < planet.to_construct.cost.movable:
+        cost = planet.to_construct.cost
+        if source.resources.movable < cost.movable:
             logger.debug("Not enough ressources on %r (%r, %r needed)"
-                    % (source, source.resources.movable,
-                       planet.to_construct.cost.movable))
+                    % (source, source.resources.movable, cost.movable))
             break
-        if source.fleet.capacity < planet.to_construct.cost.movable.total:
+        if source.fleet.capacity < cost.movable.total:
             logger.debug("Fleet capacity too low on %r (%r, %r needed)"
-                    % (source, source.fleet.capacity,
-                       planet.to_construct.cost.movable.total))
+                    % (source, source.fleet.capacity, cost.movable.total))
             break
 
         logger.warn('Sending resources to construct %r on %r'
                 % (planet.to_construct, planet))
-        travel_id = transport(interface, empire.capital, planet,
-                resources=planet.to_construct.cost)
+        travel_id = transport(interface, source, planet, resources=cost)
 
         planet.waiting_for[travel_id] = planet.to_construct.name()
 
