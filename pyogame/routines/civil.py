@@ -42,7 +42,9 @@ def plan_construction(interface):
             logger.debug("No eligible planet for construction")
             break
         if source.resources.movable < planet.to_construct.cost.movable:
-            logger.debug("Not enough ressources on %r" % source)
+            logger.debug("Not enough ressources on %r (%r, %r needed)"
+                    % (source, source.resources.movable,
+                       planet.to_construct.cost.movable))
             break
         if source.fleet.capacity < planet.to_construct.cost.movable.total:
             logger.debug("Fleet capacity too low on %r" % source)

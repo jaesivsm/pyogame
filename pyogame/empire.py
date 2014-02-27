@@ -70,7 +70,8 @@ class PlanetCollection(common.Collection):
         for planet in self:
             if not cheapest:
                 cheapest = planet
-            elif planet.to_construct.cost < cheapest.to_construct.cost:
+            elif planet.to_construct.cost.movable.total \
+                    < cheapest.to_construct.cost.movable.total:
                 cheapest = planet
         return cheapest
 
