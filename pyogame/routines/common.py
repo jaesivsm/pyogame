@@ -42,6 +42,6 @@ def recycle(interface, src, dst, debris_content):
     assert fleet.first, 'no recyclers on %r' % src
     sent_fleet = interface.send_fleet(src, dst, 'recycle',
             fleet.of_type(Recycler).for_moving(debris_content), dtype='debris')
-    logger.warn('Going to recycle debris at %r (arriving at %r)'
-            % (dst, sent_fleet.arrival_time))
+    logger.warn('Going to recycle debris at %r (arriving at %s)'
+            % (dst, sent_fleet.arrival_time.isoformat()))
     return empire.missions.add(fleet=sent_fleet)
