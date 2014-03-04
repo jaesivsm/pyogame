@@ -39,7 +39,7 @@ class Interface(selenium):
         self.current_page = None
         self.start()
 
-        logger.info('Logging in with identity %r' % self.user)
+        logger.debug('Logging in with identity %r' % self.user)
         self.open(url)
         self.click("id=loginBtn")
         self.select("id=serverLogin", "label=%s" % conf_dict['univers'])
@@ -66,11 +66,12 @@ class Interface(selenium):
 
     def update_planet_resources(self, planet=None):
         planet, page = self.go_to(planet, update=False)
-        logger.debug('updating resources on planet %r' % planet)
         try:
             for res_type in RES_TYPES:
                 res = self.__split_text("//li[@id='%s_box']" % res_type, '.')
                 planet.resources[res_type] = int(''.join(res))
+            logger.info('updating resources on planet %r (%r)'
+                         % (planet, planet.resources))
         except Exception:
             logger.exception("ERROR: Couldn't update resources")
 
@@ -102,7 +103,7 @@ class Interface(selenium):
         if not force and planet.fleet_updated:
             return
         planet, page = self.go_to(planet, 'fleet1', update=False)
-        logger.debug('updating fleet states on %r' % planet)
+        logger.info('updating fleet states on %r' % planet)
         planet.fleet.clear()
         source = html.fromstring(self.get_html_source())
         for fleet_type in ('military', 'civil'):
@@ -125,7 +126,7 @@ class Interface(selenium):
         planet.fleet_updated = True
 
     def update_empire_overall(self):
-        logger.debug('updating empire overall')
+        logger.info('updating empire overall')
         source = html.fromstring(self.get_html_source())
         planets_list = source.xpath("//div[@id='planetList']")[0]
         for position, elem in enumerate(planets_list):
@@ -134,7 +135,7 @@ class Interface(selenium):
         empire.missions.clean(empire.waiting_for)
 
     def discover(self):
-        logger.info('Getting list of colonized planets')
+        logger.debug('Getting list of colonized planets')
         source = html.fromstring(self.get_html_source())
         try:
             planets_list = source.xpath("//div[@id='planetList']")[0]
@@ -149,7 +150,7 @@ class Interface(selenium):
             empire.add(Planet(name, coords, position + 1))
 
     def crawl(self, resources=True, **kwargs):
-        logger.debug("Will crawl all empire for %s"
+        logger.info("Will crawl all empire for %s"
                 % ', '.join([key for key in kwargs if kwargs[key] is True]))
         noc = lambda x: None
         update_funcs = {
@@ -186,13 +187,13 @@ class Interface(selenium):
 
     def go_to(self, planet=None, page=None, update=True):
         if planet is not None and self.current_planet is not planet:
-            logger.info('Going to planet %r' % planet)
+            logger.debug('Going to planet %r' % planet)
             self.click("//div[@id='planetList']/div[%d]/a" % (planet.position))
             self.current_planet = planet
             self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
         if page is not None and self.current_page != page:
-            logger.info('Going to page %r' % page)
+            logger.debug('Going to page %r' % page)
             self.click("css=a[href=\"%s?page=%s\"]" % (self.server_url, page))
             self.current_page = page
             self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
@@ -249,7 +250,7 @@ class Interface(selenium):
 
     def browse_galaxy(self, galaxy, system, planet=None):
         self.go_to(planet, 'galaxy')
-        logger.info('Browsing system %r on galaxy %r' % (system, galaxy))
+        logger.debug('Browsing system %r on galaxy %r' % (system, galaxy))
         self.type("id=galaxy_input", galaxy)
         self.type("id=system_input", system)
         self.click("id=showbutton")
@@ -282,7 +283,7 @@ class Interface(selenium):
     def load(self):
         cache_path = get_cache_path(self.user)
         if not os.path.exists(cache_path):
-            logger.info('No cache file found at %r' % cache_path)
+            logger.debug('No cache file found at %r' % cache_path)
             return False
         logger.debug('Loading objects from %r' % cache_path)
         try:
