@@ -10,9 +10,8 @@ def pretty_number(number, split=3, short=True):
         return '.'.join(lst)
     multiple = {3: 'k', 6: 'M', 9: 'G', 12: 'T',
                 15: 'P', 18: 'E', 21: 'Z', 24: 'Y'}
-    if len(lst) == 2:
-        return lst[0] + 'k'
-    return '.'.join(lst[:2]) + multiple.get((len(lst)-2) * split, '')
+    precis = 1 if len(lst[0]) > 1 else 2
+    return '.'.join(lst[:precis]) + multiple.get((len(lst)-precis) * split, '')
 
 
 class Resources(object):
