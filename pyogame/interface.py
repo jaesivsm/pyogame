@@ -148,13 +148,17 @@ class Interface(selenium):
             coords = [int(coord) for coord in coords.split(':')]
             empire.add(Planet(name, coords, position + 1))
 
-    def crawl(self,
-            building=False, station=False, fleet=False, resources=True):
+    def crawl(self, resources=True, **kwargs):
+        logger.debug("Will crawl all empire for %s"
+                % ', '.join([key for key in kwargs if kwargs[key] is True]))
         noc = lambda x: None
         update_funcs = {
-                'resources': self.update_planet_buildings if building else noc,
-                'fleet1': self.update_planet_fleet if fleet else noc,
-                'station': self.update_planet_stations if station else noc,
+                'resources': self.update_planet_buildings \
+                             if kwargs.get('building') else noc,
+                'fleet1': self.update_planet_fleet \
+                          if kwargs.get('fleet') else noc,
+                'station': self.update_planet_stations \
+                           if kwargs.get('station') else noc,
         }
         for planet in empire:
             if self.current_page in update_funcs:

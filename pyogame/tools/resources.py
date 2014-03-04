@@ -1,6 +1,20 @@
 RES_TYPES = ['metal', 'crystal', 'deuterium', 'energy']
 
 
+def pretty_number(number, split=3, short=True):
+    number = str(int(number))
+    browse = zip(xrange(-split, -len(number)-split, -split),
+                 xrange(0, -len(number)-split, -split))
+    lst = [number[start:end if end else None] for start, end in browse][::-1]
+    if not short:
+        return '.'.join(lst)
+    multiple = {3: 'k', 6: 'M', 9: 'G', 12: 'T',
+                15: 'P', 18: 'E', 21: 'Z', 24: 'Y'}
+    if len(lst) == 2:
+        return lst[0] + 'k'
+    return '.'.join(lst[:2]) + multiple.get((len(lst)-2) * split, '')
+
+
 class Resources(object):
 
     def __init__(self, metal=0, crystal=0, deuterium=0, energy=0):
@@ -58,5 +72,6 @@ class Resources(object):
         output = []
         for res_type in RES_TYPES:
             if self[res_type]:
-                output.append("%s%d" % (res_type[0].upper(), self[res_type]))
+                output.append("%s%s" % (res_type[0].upper(),
+                                        pretty_number(self[res_type])))
         return r"<Resources(%s)>" % r','.join(output)

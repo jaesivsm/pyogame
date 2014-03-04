@@ -53,13 +53,16 @@ def set_logger(logfile=None, loglevel=None):
         loglevel = logging.INFO
     stream_handler = logging.StreamHandler()
     stream_handler.setLevel(loglevel)
-    if logfile is not None:
+    if logfile is None:
+        formatter = logging.Formatter(log_format)
+    else:
         stream_handler.setLevel(logging.ERROR)
-        log_format = '%(asctime)s - ' + log_format
+        formatter = logging.Formatter('%(asctime)s - ' + log_format)
         file_handler = logging.FileHandler(os.path.expanduser(logfile))
-        file_handler.setFormatter(logging.Formatter(log_format))
+        file_handler.setFormatter(formatter)
         file_handler.setLevel(loglevel)
         logger.addHandler(file_handler)
+    stream_handler.setFormatter(formatter)
     logger.addHandler(stream_handler)
     logger.setLevel(loglevel)
     return logger

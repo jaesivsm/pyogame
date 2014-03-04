@@ -20,7 +20,7 @@ def rapatriate(interface, destination=None):
         destination = empire.capital
     assert destination, "Empire has no capital " \
             "and no destination has been provided"
-    logger.info('Launching rapatriation to %r' % destination)
+    logger.debug('Launching rapatriation to %r' % destination)
     for source in empire:
         if destination is source:
             continue
@@ -42,13 +42,16 @@ def plan_construction(interface):
             logger.debug("No eligible planet for construction")
             break
         cost = planet.to_construct.cost
+        logger.debug("Willing to construct %r on %r for %r"
+                    % (planet.to_construct, planet, cost.movable))
+
         if source.resources.movable < cost.movable:
-            logger.debug("Not enough ressources on %r (%r, %r needed)"
-                    % (source, source.resources.movable, cost.movable))
+            logger.debug("Not enough ressources on %r (having %r)"
+                    % (source, source.resources.movable))
             break
         if source.fleet.capacity < cost.movable.total:
-            logger.debug("Fleet capacity too low on %r (%r, %r needed)"
-                    % (source, source.fleet.capacity, cost.movable.total))
+            logger.debug("Fleet capacity too low on %r (able to move %r)"
+                    % (source, source.fleet.capacity))
             break
 
         logger.warn('Sending resources to construct %r on %r'
@@ -71,7 +74,7 @@ def resources_reception_and_construction(interface):
         if not fleet.dst in waited_constructs:
             waited_constructs[fleet.dst] = []
         # we list the constructions fleets have delivered resources for
-        logger.info('A fleet has arrived on %r to construct %r'
+        logger.debug('A fleet has arrived on %r to construct %r'
                 % (planet, planet.waiting_for[fleet.travel_id]))
         waited_constructs[planet.key].append(
                 planet.waiting_for[fleet.travel_id])
