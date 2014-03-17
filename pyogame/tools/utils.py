@@ -4,6 +4,7 @@ import logging
 from argparse import ArgumentParser
 
 from .const import LOGFILE
+from .factory import Factory
 
 
 def parse_args():
@@ -46,7 +47,11 @@ def parse_args():
 
 
 def set_logger(logfile=None, username=None, loglevel=None):
+
     "Will set a global logging configuration for muleo."
+    if loglevel is None:
+        loglevel = Factory().conf.get('loglevel')
+
     logger = logging.getLogger('pyogame')
     log_format = '%(levelname)-8s - %(message)s'
     if loglevel is None:

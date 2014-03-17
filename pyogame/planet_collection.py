@@ -9,8 +9,8 @@ logger = logging.getLogger(__name__)
 
 class PlanetCollection(common.Collection):
 
-    def __init__(self, capital_coords=None):
-        self.capital_coords = capital_coords
+    def __init__(self, capital=None, **kwargs):
+        self.capital_coords = capital
         self.planets = {}
         self.missions = Missions()
         super(PlanetCollection, self).__init__(self.planets)
@@ -59,7 +59,7 @@ class PlanetCollection(common.Collection):
     @property
     def waiting_for(self):
         waiting_for = {}
-        for planet in empire:
+        for planet in self:
             waiting_for.update(planet.waiting_for)
         return waiting_for
 
@@ -83,6 +83,3 @@ class PlanetCollection(common.Collection):
     def dump(self):
         return {'planets': [planet.dump() for planet in self],
                 'missions': self.missions.dump()}
-
-
-empire = PlanetCollection()

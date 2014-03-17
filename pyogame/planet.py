@@ -74,6 +74,7 @@ class Planet(object):
     def dump(self):
         dump = {'name': self.name,
                 'coords': self.coords,
+                'idle': self.idle,
                 'position': self.position,
                 'waiting_for': self.waiting_for,
                 'capital': self.capital,
@@ -86,7 +87,8 @@ class Planet(object):
         return dump
 
     def __repr__(self):
-        return r"<Planet(%r, %r, %r)>" % (self.name, self.coords, self.position)
+        return r"<Planet(%r, %r, %r)>" % (
+                self.name, self.coords, self.position)
 
     def __str__(self):
         return '%s %r' % (self.name, self.coords)
