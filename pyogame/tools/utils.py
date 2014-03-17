@@ -45,7 +45,7 @@ def parse_args():
     return args, LOGFILE if args.log else None, loglevel
 
 
-def set_logger(logfile=None, loglevel=None):
+def set_logger(logfile=None, username=None, loglevel=None):
     "Will set a global logging configuration for muleo."
     logger = logging.getLogger('pyogame')
     log_format = '%(levelname)-8s - %(message)s'
@@ -57,7 +57,8 @@ def set_logger(logfile=None, loglevel=None):
         formatter = logging.Formatter(log_format)
     else:
         stream_handler.setLevel(logging.ERROR)
-        formatter = logging.Formatter('%(asctime)s - ' + log_format)
+        formatter = logging.Formatter('%(asctime)s - %s - %s'
+                                      % (username, log_format))
         file_handler = logging.FileHandler(os.path.expanduser(logfile))
         file_handler.setFormatter(formatter)
         file_handler.setLevel(loglevel)
@@ -77,7 +78,7 @@ def load_conf(username, logfile=None, loglevel=None):
 
     if loglevel is None:
         loglevel = conf.get('loglevel', logging.INFO)
-    logger = set_logger(logfile, loglevel)
+    logger = set_logger(logfile, username, loglevel)
 
     if username not in conf:
         logger.error('Account %r unknown' % username)
