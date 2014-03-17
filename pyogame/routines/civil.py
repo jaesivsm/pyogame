@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 def in_place_empire_upgrade(interface):
     for planet in empire.idles:
         if planet.resources > planet.to_construct.cost:
-            logger.warn('Resources are available on %r to construct %r'
+            logger.warn('Resources are available on %s to construct %s'
                     % (planet, planet.to_construct))
             interface.construct(planet.to_construct, planet)
 
@@ -20,15 +20,15 @@ def rapatriate(interface, destination=None):
         destination = empire.capital
     assert destination, "Empire has no capital " \
             "and no destination has been provided"
-    logger.info('Launching rapatriation to %r' % destination)
+    logger.info('Launching rapatriation to %s' % destination)
     for source in empire:
         if destination is source:
             continue
         if not source.fleet:
-            logger.info('no fleet on %r' % source)
+            logger.info('no fleet on %s' % source)
             continue
         if float(source.resources.total) / source.fleet.capacity < 2. / 3:
-            logger.info('not enough resources on %r to bother repatriating'
+            logger.info('not enough resources on %s to bother repatriating'
                     % source)
             continue
         transport(interface, source, destination, all_ships=True)
@@ -42,19 +42,19 @@ def plan_construction(interface):
             logger.info("No eligible planet for construction")
             break
         cost = planet.to_construct.cost
-        logger.info("Willing to construct %r on %r for %r"
+        logger.info("Willing to construct %s on %s for %s"
                     % (planet.to_construct, planet, cost.movable))
 
         if source.resources.movable < cost.movable:
-            logger.info("Not enough ressources on %r (having %r)"
+            logger.info("Not enough ressources on %s (having %s)"
                     % (source, source.resources.movable))
             break
         if source.fleet.capacity < cost.movable.total:
-            logger.info("Fleet capacity too low on %r (able to move %r)"
+            logger.info("Fleet capacity too low on %s (able to move %s)"
                     % (source, source.fleet.capacity))
             break
 
-        logger.warn('Sending resources to construct %r on %r'
+        logger.warn('Sending resources to construct %s on %s'
                 % (planet.to_construct, planet))
         travel_id = transport(interface, source, planet, resources=cost)
 
@@ -74,8 +74,8 @@ def resources_reception_and_construction(interface):
         if not fleet.dst in waited_constructs:
             waited_constructs[fleet.dst] = []
         # we list the constructions fleets have delivered resources for
-        logger.info('A fleet has arrived on %r to construct %r'
-                % (planet, planet.waiting_for[fleet.travel_id]))
+        logger.info('A fleet has arrived on %s to construct %s'
+                    % (planet, planet.waiting_for[fleet.travel_id]))
         waited_constructs[planet.key].append(
                 planet.waiting_for[fleet.travel_id])
 
@@ -89,7 +89,7 @@ def resources_reception_and_construction(interface):
             # we count how many of this construction are waiting on this planet
             waited_travel = planet.waiting_for.values().count(construct)
             if waited_constr == waited_travel:
-                logger.warn("All fleet arrived to construct %r on %r, "
+                logger.warn("All fleet arrived to construct %s on %s, "
                         "launching construction." % (construct, planet))
                 interface.construct(construct, planet)
                 for travel_id, c in planet.waiting_for.items():

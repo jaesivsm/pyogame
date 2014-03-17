@@ -70,13 +70,13 @@ class Interface(selenium):
             for res_type in RES_TYPES:
                 res = self.__split_text("//li[@id='%s_box']" % res_type, '.')
                 planet.resources[res_type] = int(''.join(res))
-            logger.info('updating resources on planet %r (%r)'
+            logger.info('updating resources on planet %s (%s)'
                          % (planet, planet.resources))
         except Exception:
             logger.exception("ERROR: Couldn't update resources")
 
     def _parse_constructions(self, page, planet=None, constructions=[]):
-        logger.debug('updating %s states for %r' % (page, planet))
+        logger.debug('updating %s states for %s' % (page, planet))
         planet, page = self.go_to(planet, page, update=False)
         source = html.fromstring(self.get_html_source())
         for pos, ele in enumerate(source.xpath("//span[@class='level']")):
@@ -103,13 +103,13 @@ class Interface(selenium):
         if not force and planet.fleet_updated:
             return
         planet, page = self.go_to(planet, 'fleet1', update=False)
-        logger.info('updating fleet states on %r' % planet)
+        logger.info('updating fleet states on %s' % planet)
         planet.fleet.clear()
         source = html.fromstring(self.get_html_source())
         for fleet_type in ('military', 'civil'):
             fleet = source.xpath("//ul[@id='%s']" % fleet_type)
             if len(fleet) < 1:
-                logger.debug('No %s fleet on %r' % (fleet_type, planet))
+                logger.debug('No %s fleet on %s' % (fleet_type, planet))
                 continue
             for ships in fleet[0]:
                 ships_id = ships.get('id')
@@ -173,7 +173,7 @@ class Interface(selenium):
         planet = planet if planet is not None else self.current_planet
         if not isinstance(construction, Constructions):
             assert hasattr(planet, construction), \
-                    '%r has not %r' % (planet, construction)
+                    '%s has not %r' % (planet, construction)
             construction = getattr(planet, construction)
         if isinstance(construction, tuple(BUILDINGS.values())):
             page = 'resources'
@@ -187,13 +187,13 @@ class Interface(selenium):
 
     def go_to(self, planet=None, page=None, update=True):
         if planet is not None and self.current_planet is not planet:
-            logger.debug('Going to planet %r' % planet)
+            logger.debug('Going to planet %s' % planet)
             self.click("//div[@id='planetList']/div[%d]/a" % (planet.position))
             self.current_planet = planet
             self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
         if page is not None and self.current_page != page:
-            logger.debug('Going to page %r' % page)
+            logger.debug('Going to page %s' % page)
             self.click("css=a[href=\"%s?page=%s\"]" % (self.server_url, page))
             self.current_page = page
             self.wait_for_page_to_load(DEFAULT_WAIT_TIME)

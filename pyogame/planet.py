@@ -54,7 +54,7 @@ class Planet(object):
         to_construct = self.metal_mine
         if self.deuterium_synthetizer.level < self.metal_mine.level - 7:
             to_construct = self.deuterium_synthetizer
-        if self.crystal_mine.level < self.metal_mine.level - 1:
+        if self.crystal_mine.level < self.metal_mine.level - 2:
             to_construct = self.crystal_mine
         if to_construct.cost.energy > self.resources.energy:
             to_construct = self.solar_plant
@@ -86,7 +86,10 @@ class Planet(object):
         return dump
 
     def __repr__(self):
-        return r"<%s %s>" % (self.name, self.coords)
+        return r"<Planet(%r, %r, %r)>" % (self.name, self.coords, self.position)
+
+    def __str__(self):
+        return '%s %r' % (self.name, self.coords)
 
     def __eq__(self, other):
         if isinstance(other, Planet) and other.coords == self.coords:

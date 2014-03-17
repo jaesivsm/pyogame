@@ -8,12 +8,12 @@ logger = logging.getLogger(__name__)
 
 
 def transport(interface, src, dst, all_ships=False, resources=None):
-    res_msg = ''
+    res_msg = '%s'
     if not resources:
         resources = src.resources
-        res_msg = 'all resources '
+        res_msg = 'all resources (%s)'
     resources = resources.movable
-    res_msg += repr(resources)
+    res_msg = res_msg % resources
 
     if all_ships:
         fleet = src.fleet.copy()
@@ -21,7 +21,7 @@ def transport(interface, src, dst, all_ships=False, resources=None):
         fleet = src.fleet.transports.for_moving(resources)
 
     sent_fleet = interface.send_fleet(src, dst, 'transport', fleet, resources)
-    logger.warn('Moving %s from %r to %r arriving at %s'
+    logger.warn('Moving %s from %s to %s arriving at %s'
             % (res_msg, src, dst, sent_fleet.arrival_time.isoformat()))
     return empire.missions.add(fleet=sent_fleet)
 
@@ -42,6 +42,6 @@ def recycle(interface, src, dst, debris_content):
     assert fleet.first, 'no recyclers on %r' % src
     sent_fleet = interface.send_fleet(src, dst, 'recycle',
             fleet.of_type(Recycler).for_moving(debris_content), dtype='debris')
-    logger.warn('Going to recycle debris at %r (arriving at %s)'
-            % (dst, sent_fleet.arrival_time.isoformat()))
+    logger.warn('Going to recycle debris (%s) at %s (arriving at %s)'
+            % (debris_content, dst, sent_fleet.arrival_time.isoformat()))
     return empire.missions.add(fleet=sent_fleet)

@@ -68,9 +68,13 @@ class Resources(object):
         return sum(dict(self.__iter__()).values())
 
     def __repr__(self):
+        output = [str(self[r_t]) for r_t in RES_TYPES if self[r_t]]
+        return r"<Resources(%s)>" % r','.join(output)
+
+    def __str__(self):
         output = []
         for res_type in RES_TYPES:
             if self[res_type]:
                 output.append("%s%s" % (res_type[0].upper(),
                                         pretty_number(self[res_type])))
-        return r"<Resources(%s)>" % r','.join(output)
+        return ",".join(output)

@@ -31,7 +31,8 @@ class Constructions(object):
 
     @classmethod
     def name(cls):
-        return re.sub('([A-Z])', r'_\1', cls.__name__).lower().strip('_')
+        name = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', cls.__name__)
+        return re.sub('([a-z0-9])([A-Z])', r'\1_\2', name).lower()
 
     @property
     def cost(self):
@@ -42,6 +43,9 @@ class Constructions(object):
 
     def __repr__(self):
         return "<%s(%d)>" % (self.__class__.__name__, self.level)
+
+    def __str__(self):
+        return "%s (lvl %d)" % (self.name(), self.level)
 
 
 class MetalMine(Constructions):

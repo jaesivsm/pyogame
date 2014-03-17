@@ -4,6 +4,7 @@ import dateutil.parser
 from uuid import uuid4
 
 from pyogame.ships import Ships
+from pyogame.tools.resources import pretty_number
 from pyogame.tools.common import coords_to_key, Collection
 
 logger = logging.getLogger(__name__)
@@ -45,8 +46,9 @@ class Fleet(Collection):
         fleet, quantity = Fleet(), resources.movable.total
         assert self, 'fleet is empty !'
         if self.capacity < quantity:
-            logger.error('Too many resources (%r) for fleet %r with capacity %r'
-                    % (quantity, self, self.capacity))
+            logger.error('Too many resources (%s) for fleet %r with capacity %s'
+                    % (pretty_number(quantity), self,
+                       pretty_number(self.capacity)))
             return self
         cmp_func = lambda x,y: cmp(x.capacity, y.capacity)
         for ships in sorted(self, cmp=cmp_func, reverse=True):
