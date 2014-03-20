@@ -36,6 +36,8 @@ def parse_args():
             action='store', default=False)
     parser.add_argument('-i', '--idles', dest='idles',
             action='store_true', default=False)
+    parser.add_argument('-s', '--stats', dest='stats',
+            action='store_true', default=False)
     args = parser.parse_args()
     if args.quiet:
         loglevel = logging.ERROR
@@ -72,20 +74,3 @@ def set_logger(logfile=None, username=None, loglevel=None):
     logger.addHandler(stream_handler)
     logger.setLevel(loglevel)
     return logger
-
-
-def load_conf(username, logfile=None, loglevel=None):
-    from pyogame.interface import Interface
-    from pyogame.tools.const import CONF_PATH
-
-    with open(CONF_PATH) as conf_file:
-        conf = json.load(conf_file)
-
-    if loglevel is None:
-        loglevel = conf.get('loglevel', logging.INFO)
-    logger = set_logger(logfile, username, loglevel)
-
-    if username not in conf:
-        logger.error('Account %r unknown' % username)
-        return None
-    return Interface(conf[username])

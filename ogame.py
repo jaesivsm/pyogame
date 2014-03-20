@@ -12,6 +12,10 @@ if __name__ == "__main__":
     factory = tools.Factory(args.user)
     logger = tools.set_logger(logfile, args.user, loglevel)
 
+    if args.stats:
+        tools.print_stats()
+        exit(0)
+
     factory.interface.login()
     factory.interface.update_empire_overall()
     if args.rapatriate:
