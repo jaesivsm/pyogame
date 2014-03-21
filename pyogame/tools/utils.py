@@ -57,8 +57,8 @@ def set_logger(logfile=None, username=None, loglevel=None):
         formatter = logging.Formatter(log_format)
     else:
         stream_handler.setLevel(logging.ERROR)
-        formatter = logging.Formatter('%(asctime)s - %s - %s'
-                                      % (username, log_format))
+        formatter = logging.Formatter(' - '.join(
+                                      ['%(asctime)s', username, log_format]))
         file_handler = logging.FileHandler(os.path.expanduser(logfile))
         file_handler.setFormatter(formatter)
         file_handler.setLevel(loglevel)

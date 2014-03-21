@@ -43,7 +43,8 @@ class Fleet(Collection):
             del self._ships[ships.ships_id]
 
     def for_moving(self, resources):
-        fleet, quantity = Fleet(), resources.movable.total
+        #FIXME dirty hack to count deuterium, highly wrong
+        fleet, quantity = Fleet(), resources.movable.total * 1.10
         assert self, 'fleet is empty !'
         if self.capacity < quantity:
             logger.error('Too many resources (%s) for fleet %r with capacity %s'
