@@ -44,25 +44,29 @@ class Fleet(Collection):
 
     def for_moving(self, resources):
         #FIXME dirty hack to count deuterium, highly wrong
-        fleet, quantity = Fleet(), resources.movable.total * 1.10
+        fleet, amount = Fleet(), resources.movable.total
         assert self, 'fleet is empty !'
-        if self.capacity < quantity:
+        if self.capacity < amount:
             logger.error('Too many resources (%s) for fleet %r with capacity %s'
-                    % (pretty_number(quantity), self,
+                    % (pretty_number(amount), self,
                        pretty_number(self.capacity)))
             return self
         cmp_func = lambda x,y: cmp(x.capacity, y.capacity)
         for ships in sorted(self, cmp=cmp_func, reverse=True):
+            if fleet.capacity > amount:
+                break
             ships = ships.copy()
-            if ships.capacity >= quantity:
-                nb_ships = quantity / ships.single_ship_capacity
-                if quantity % ships.single_ship_capacity:
-                    nb_ships += 1
-                ships.quantity = nb_ships
-                fleet.add(ships=ships)
-                return fleet
+            total_ship = ships.quantity
+            ships.quantity = amount / ships.single_ship_capacity
+            if ships.quantity > total_ship:
+                ships.quantity = total_ship
+
+            quantity_eq_capacity = amount % ships.single_ship_capacity == 0
+            is_ship_left = total_ship - ships.quantity > 0
+            if quantity_eq_capacity and is_ship_left:
+                ships.quantity += 1
             fleet.add(ships=ships)
-            quantity -= ships.capacity
+        return fleet
 
     def of_type(self, *args):
         fleet = Fleet()
