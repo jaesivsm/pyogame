@@ -1,21 +1,22 @@
 # -*- coding: utf-8 -*-
 import logging
 
-from pyogame.empire import empire
+from pyogame.tools.factory import Factory
 from pyogame.routines.common import transport
 
 logger = logging.getLogger(__name__)
 
 
-def in_place_empire_upgrade(interface):
-    for planet in empire.idles:
+def in_place_empire_upgrade():
+    for planet in Factory().empire.idles:
         if planet.resources > planet.to_construct.cost:
             logger.warn('Resources are available on %s to construct %s'
                     % (planet, planet.to_construct))
-            interface.construct(planet.to_construct, planet)
+            Factory().interface.construct(planet.to_construct, planet)
 
 
-def rapatriate(interface, destination=None):
+def rapatriate(destination=None):
+    empire = Factory().empire
     if not destination and empire.capital:
         destination = empire.capital
     assert destination, "Empire has no capital " \
@@ -31,10 +32,11 @@ def rapatriate(interface, destination=None):
             logger.info('not enough resources on %s to bother repatriating'
                     % source)
             continue
-        transport(interface, source, destination, all_ships=True)
+        transport(source, destination, all_ships=True)
 
 
-def plan_construction(interface):
+def plan_construction():
+    empire = Factory().empire
     source = empire.capital
     while True:
         planet = empire.idles.cheapest
@@ -56,13 +58,14 @@ def plan_construction(interface):
 
         logger.warn('Sending resources to construct %s on %s'
                 % (planet.to_construct, planet))
-        travel_id = transport(interface, source, planet, resources=cost)
+        travel_id = transport(source, planet, resources=cost)
 
         planet.waiting_for[travel_id] = planet.to_construct.name()
 
 
-def resources_reception_and_construction(interface):
+def resources_reception_and_construction():
     waited_constructs = {}
+    empire = Factory().empire
 
     for fleet in empire.missions.arrived:
         if not fleet.travel_id in empire.waiting_for:
@@ -91,7 +94,7 @@ def resources_reception_and_construction(interface):
             if waited_constr == waited_travel:
                 logger.warn("All fleet arrived to construct %s on %s, "
                         "launching construction." % (construct, planet))
-                interface.construct(construct, planet)
+                Factory().interface.construct(construct, planet)
                 for travel_id, c in planet.waiting_for.items():
                     if c == construct:
                         del planet.waiting_for[travel_id]

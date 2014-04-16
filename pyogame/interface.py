@@ -1,19 +1,15 @@
 # -*- coding: utf-8 -*-
-import os
 import re
-import json
 import time
 import logging
 from lxml import html
 from selenium import selenium
 from datetime import datetime
 
-
-from pyogame.empire import empire
 from pyogame.planet import Planet
 from pyogame.fleet import FlyingFleet
 from pyogame.constructions import BUILDINGS, STATIONS, Constructions
-from pyogame.tools.const import get_cache_path, MISSIONS, MISSIONS_DST
+from pyogame.tools.const import MISSIONS, MISSIONS_DST
 from pyogame.tools.resources import RES_TYPES, Resources
 from pyogame.tools.common import GalaxyRow
 
@@ -24,45 +20,40 @@ DEFAULT_JS_SLEEP = 1
 
 class Interface(selenium):
 
-    def __init__(self, conf_dict={}):
-        needed = ['user', 'password', 'univers']
-        for key in needed:
-            assert key in conf_dict, "configuration dictionnary must at " \
-                    "least own the following keys: " + ", ".join(needed)
-        empire.capital_coords = conf_dict.get('capital')
-        self.user = conf_dict['user']
-
-        url = "http://%s.ogame.gameforge.com/" % conf_dict.get('lang', 'fr')
-
-        selenium.__init__(self, "localhost", 4444, "*chrome", url)
+    def __init__(self, user, password, univers, lang='fr', **kwargs):
+        self.url = "http://%s.ogame.gameforge.com/" % lang
+        selenium.__init__(self, "localhost", 4444, "*chrome", self.url)
         self.current_planet = None
         self.current_page = None
-        self.start()
-
-        logger.debug('Logging in with identity %r' % self.user)
-        self.open(url)
-        self.click("id=loginBtn")
-        self.select("id=serverLogin", "label=%s" % conf_dict['univers'])
-        self.type("id=usernameLogin", conf_dict['user'])
-        self.type("id=passwordLogin", conf_dict['password'])
-        self.click("id=loginSubmit")
-        self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
-
-        time.sleep(DEFAULT_JS_SLEEP)
-        self.server_url = selenium.get_location(self).split('?')[0]
-        self.load()
-        if not empire.planets:
-            self.discover()
-        self.update_empire_overall()
+        self.user, self.password, self.univers = user, password, univers
+        from pyogame.tools.factory import Factory
+        self.__factory = Factory()
+        self.empire = self.__factory.empire
 
     def __del__(self):
-        self.dump()
+        self.__factory.dump()
         self.stop()
 
     def __split_text(self, xpath, split_on='\n'):
         for txt in self.get_text(xpath).split(split_on):
             if txt.strip():
                 yield txt.strip()
+
+    def login(self):
+        self.start()
+        logger.debug('Logging in with identity %r' % self.user)
+        self.open(self.url)
+        self.click("id=loginBtn")
+        self.select("id=serverLogin", "label=%s" % self.univers)
+        self.type("id=usernameLogin", self.user)
+        self.type("id=passwordLogin", self.password)
+        self.click("id=loginSubmit")
+        self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
+
+        time.sleep(DEFAULT_JS_SLEEP)
+        self.server_url = selenium.get_location(self).split('?')[0]
+        self.discover()
+        self.update_empire_overall()
 
     def update_planet_resources(self, planet=None):
         planet, page = self.go_to(planet, update=False)
@@ -130,11 +121,13 @@ class Interface(selenium):
         source = html.fromstring(self.get_html_source())
         planets_list = source.xpath("//div[@id='planetList']")[0]
         for position, elem in enumerate(planets_list):
-            empire.planets[position + 1].idle = False \
+            self.empire.planets[position + 1].idle = False \
                     if elem.find_class('icon_wrench') else True
-        empire.missions.clean(empire.waiting_for)
+        self.empire.missions.clean(self.empire.waiting_for)
 
     def discover(self):
+        if self.empire.loaded:
+            return
         logger.debug('Getting list of colonized planets')
         source = html.fromstring(self.get_html_source())
         try:
@@ -147,7 +140,8 @@ class Interface(selenium):
             name = elem.find_class('planet-name')[0].text.strip()
             coords = elem.find_class('planet-koords')[0].text.strip('[]')
             coords = [int(coord) for coord in coords.split(':')]
-            empire.add(Planet(name, coords, position + 1))
+            self.empire.add(Planet(name, coords, position + 1))
+        self.empire.loaded = True
 
     def crawl(self, resources=True, **kwargs):
         logger.info("Will crawl all empire for %s"
@@ -161,7 +155,7 @@ class Interface(selenium):
                 'station': self.update_planet_stations \
                            if kwargs.get('station') else noc,
         }
-        for planet in empire:
+        for planet in self.empire:
             if self.current_page in update_funcs:
                 update_funcs[self.current_page](planet)
             for func in update_funcs.values():
@@ -279,23 +273,3 @@ class Interface(selenium):
                     break
             yield GalaxyRow([galaxy, system, position+1],
                     inactive, vacation, noob, debris, debris_content)
-
-    def load(self):
-        cache_path = get_cache_path(self.user)
-        if not os.path.exists(cache_path):
-            logger.debug('No cache file found at %r' % cache_path)
-            return False
-        logger.debug('Loading objects from %r' % cache_path)
-        try:
-            with open(cache_path, 'r') as fp:
-                empire.load(**json.load(fp))
-        except ValueError:
-            logger.error('Cache has been corrupted, ignoring it')
-            os.remove(cache_path)
-            return False
-        return True
-
-    def dump(self):
-        handler = lambda o: o.isoformat() if isinstance(o, datetime) else None
-        with open(get_cache_path(self.user), 'w') as fp:
-            json.dump(empire.dump(), fp, default=handler)

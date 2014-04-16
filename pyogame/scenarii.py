@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 
-from pyogame.empire import empire
-from pyogame.routines import guerrilla
+from pyogame.tools.factory import Factory
 
 logger = logging.getLogger(__name__)
 
@@ -15,12 +14,13 @@ def display_messages(interface) :
     pass
 
 
-def specific_construction(interface, to_build) :
+def specific_construction(to_build) :
     position, construction = to_build.split('/')
+    factory = Factory()
     try:
-        for planet in empire:
+        for planet in factory.empire:
             if planet.position == int(position):
-                interface.construct(construction, planet)
+                factory.interface.construct(construction, planet)
                 return True
         logger.critical('No planet at position %r' % position)
     except AssertionError, error:
