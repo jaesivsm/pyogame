@@ -30,10 +30,6 @@ class Interface(selenium):
         self.__factory = Factory()
         self.empire = self.__factory.empire
 
-    def __del__(self):
-        self.__factory.dump()
-        self.stop()
-
     def __split_text(self, xpath, split_on='\n'):
         for txt in self.get_text(xpath).split(split_on):
             if txt.strip():
