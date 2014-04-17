@@ -29,9 +29,9 @@ class Constructions(object):
     def css_dom(self):
         return "css=#button%d a.fastBuild" % self.position
 
-    @classmethod
-    def name(cls):
-        name = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', cls.__name__)
+    @property
+    def name(self):
+        name = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', self.__class__.__name__)
         return re.sub('([a-z0-9])([A-Z])', r'\1_\2', name).lower()
 
     @property
@@ -45,7 +45,7 @@ class Constructions(object):
         return "<%s(%d)>" % (self.__class__.__name__, self.level)
 
     def __str__(self):
-        return "%s (lvl %d)" % (self.name(), self.level)
+        return "%s (lvl %d)" % (self.name, self.level)
 
 
 class MetalMine(Constructions):
@@ -94,12 +94,12 @@ class NaniteFactory(Constructions):
 
 
 BUILDINGS = {
-        0: MetalMine,
-        1: CrystalMine,
-        2: DeuteriumSynthetizer,
-        3: SolarPlant,
+        0: MetalMine(),
+        1: CrystalMine(),
+        2: DeuteriumSynthetizer(),
+        3: SolarPlant(),
 }
 STATIONS = {
-        0: RobotFactory,
-        5: NaniteFactory,
+        0: RobotFactory(),
+        5: NaniteFactory(),
 }

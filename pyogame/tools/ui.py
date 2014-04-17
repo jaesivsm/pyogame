@@ -1,16 +1,83 @@
+from collections import defaultdict
+
+from pyogame.tools.resources import pretty_number
 from pyogame.tools.factory import Factory
 
 
-def stat_lines():
-    empire = Factory().empire
-    lines = []
-    for planet in empire:
-        yield planet.name, planet.key, planet.capital, planet.is_idle, \
-                planet.is_waiting, planet.resources.movable, \
-                planet.metal_mine, planet.crystal_mine, \
-                planet.deuterium_synthetizer, planet.solar_plant
+def pstr(value, is_title=False):
+    if isinstance(value, (list, set, tuple)):
+        value = value[0]
+    if is_title:
+        if value.startswith('is_'):
+            value = value[3:]
+        value = value.split('_')[0]
+        return value[:7].capitalize()
+    if isinstance(value, bool):
+        return '+' if value else ''
+    if isinstance(value, int):
+        return pretty_number(value)
+    return str(value)
 
 
-def print_stats():
-    for line in stat_lines():
+def get_attr(element, attrs):
+    if not type(attrs) is str:
+        attrs = attrs[1]
+    for attr in attrs.split('.'):
+        element = getattr(element, attr)
+    return element
+
+
+def print_lines(iterable, *columns):
+    lenghts = defaultdict(int)
+
+    def set_max_len(column, value, is_title=False):
+        lenght = len(pstr(value, is_title))
+        if lenght > lenghts[column]:
+            lenghts[column] = lenght
+
+    for column in columns:
+        set_max_len(column, column, is_title=True)
+        for element in iterable:
+            set_max_len(column, get_attr(element, column))
+
+    def add_to_line(value, space=' ', sep='|'):
+        return space + value + space * (lenghts[column] - len(value) + 1) + sep
+    sep_line = '+'
+    line = '|'
+    for column in columns:
+        value = pstr(column, is_title=True)
+        line += add_to_line(value)
+        sep_line += add_to_line('-' * len(value), '-', '+')
+    print sep_line
+    print line
+    print sep_line
+
+    for element in iterable:
+        line = '|'
+        for column in columns:
+            value = pstr(get_attr(element, column))
+            line += add_to_line(value)
         print line
+    print sep_line
+
+def _try_exit(exit_status):
+    try:
+        exit(exit_status)
+    except NameError:
+        pass  # not in a shell
+
+def print_overall_status():
+    print_lines(Factory().empire, 'name', 'key', 'capital', 'is_idle',
+                'is_waiting', 'resources', 'metal_mine.level',
+                'crystal_mine.level', 'deuterium_synthetizer.level',
+                'solar_plant.level', ('transport', 'fleet.capacity'))
+    _try_exit(0)
+
+def print_to_construct():
+    print_lines(Factory().empire, 'name', ('construct', 'to_construct.name'),
+            ('level', 'to_construct.level'), ('cost', 'to_construct.cost'))
+    _try_exit(0)
+
+def unknown_display(display):
+    print "Unknown display: %r" % display
+    _try_exit(1)

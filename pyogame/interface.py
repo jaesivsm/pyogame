@@ -68,7 +68,7 @@ class Interface(selenium):
         source = html.fromstring(self.get_html_source())
         for pos, ele in enumerate(source.xpath("//span[@class='level']")):
             try:
-                building = getattr(planet, constructions[pos].name())
+                building = getattr(planet, constructions[pos].name)
             except KeyError:
                 continue
             building.level = int(ele.text_content().split()[-1])

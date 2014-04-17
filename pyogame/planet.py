@@ -25,8 +25,8 @@ class Planet(object):
         self.fleet_updated = False
 
         for construction in BUILDINGS.values() + STATIONS.values():
-            setattr(self, construction.name(),
-                    construction(kwargs.get(construction.name(), 0)))
+            setattr(self, construction.name,
+                    construction.__class__(kwargs.get(construction.name, 0)))
 
     @property
     def key(self):
@@ -84,7 +84,7 @@ class Planet(object):
         }
 
         for constru in BUILDINGS.values() + STATIONS.values():
-            dump[constru.name()] = getattr(self, constru.name()).level
+            dump[constru.name] = getattr(self, constru.name).level
         return dump
 
     def __repr__(self):

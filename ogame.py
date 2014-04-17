@@ -12,9 +12,13 @@ if __name__ == "__main__":
     factory = tools.Factory(args.user)
     logger = tools.set_logger(logfile, args.user, loglevel)
 
-    if args.stats:
-        tools.print_stats()
-        exit(0)
+    if args.ui:
+        if args.ui == 'overall':
+            tools.ui.print_overall_status()
+        elif args.ui == 'toconstruct':
+            tools.ui.print_to_construct()
+        else:
+            tools.ui.unknown_display(args.ui)
 
     factory.interface.login()
     factory.interface.update_empire_overall()
