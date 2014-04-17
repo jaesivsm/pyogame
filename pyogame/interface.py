@@ -165,7 +165,8 @@ class Interface(selenium):
             assert hasattr(planet, construction), \
                     '%s has not %r' % (planet, construction)
             construction = getattr(planet, construction)
-        if isinstance(construction, tuple(BUILDINGS.values())):
+        if isinstance(construction, tuple(building.__class__
+                                          for building in BUILDINGS.values())):
             page = 'resources'
         else:
             page = 'station'

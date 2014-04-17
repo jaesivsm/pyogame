@@ -60,7 +60,7 @@ def plan_construction():
                 % (planet.to_construct, planet))
         travel_id = transport(source, planet, resources=cost)
 
-        planet.waiting_for[travel_id] = planet.to_construct.name()
+        planet.waiting_for[travel_id] = planet.to_construct.name
 
 
 def resources_reception_and_construction():
