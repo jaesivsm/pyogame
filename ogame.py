@@ -22,18 +22,16 @@ if __name__ == "__main__":
 
     factory.interface.login()
     factory.interface.update_empire_overall()
+    factory.interface.crawl(building=True, fleet=True, station=True)
     if args.rapatriate:
-        factory.interface.crawl(fleet=True)
         routines.civil.rapatriate()
     if args.construct:
         routines.civil.plan_construction()
     if args.probes:
-        factory.interface.crawl(fleet=True)
         routines.guerrilla.check_neighborhood(
                 [args.area_start, args.area_end],
                 routines.guerrilla.SPY)
     if args.recycle:
-        factory.interface.crawl(fleet=True)
         routines.guerrilla.check_neighborhood(
                 [args.area_start, args.area_end],
                 routines.guerrilla.RECYCLE)
@@ -43,7 +41,6 @@ if __name__ == "__main__":
         scenarii.specific_construction(args.build)
     if not (args.rapatriate or args.construct or args.probes
             or args.recycle or args.idles or args.build):
-        factory.interface.crawl(building=True, fleet=True, station=True)
         routines.civil.in_place_empire_upgrade()
         routines.civil.resources_reception_and_construction()
         routines.civil.rapatriate()
