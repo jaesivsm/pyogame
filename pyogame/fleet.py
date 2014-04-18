@@ -120,8 +120,8 @@ class FlyingFleet(Fleet):
         dump = super(FlyingFleet, self).dump()
         dump.update({'travel_id': self.travel_id,
                 'flight_type': self.flight_type,
-                'src': self.dst, 'arrival_time': self.arrival_time,
-                'dst': self.src, 'return_time': self.return_time,
+                'src': self.src, 'arrival_time': self.arrival_time,
+                'dst': self.dst, 'return_time': self.return_time,
         })
         return dump
 
