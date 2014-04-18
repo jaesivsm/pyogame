@@ -8,15 +8,12 @@ def pstr(value, is_title=False):
     if isinstance(value, (list, set, tuple)):
         value = value[0]
     if is_title:
-        if value.startswith('is_'):
-            value = value[3:]
-        value = value.split('_')[0]
-        return value[:7].capitalize()
+        return value.capitalize()
     if isinstance(value, bool):
         return '+' if value else ''
     if isinstance(value, int):
         return pretty_number(value)
-    return str(value)
+    return unicode(value)
 
 
 def get_attr(element, attrs):
@@ -67,15 +64,19 @@ def _try_exit(exit_status):
         pass  # not in a shell
 
 def print_overall_status():
-    print_lines(Factory().empire, 'name', 'key', 'capital', 'is_idle',
-                'is_waiting', 'resources', 'metal_mine.level',
-                'crystal_mine.level', 'deuterium_synthetizer.level',
-                'solar_plant.level', ('transport', 'fleet.capacity'))
+    print_lines(Factory().empire, 'name', 'key', ('cap', 'capital'),
+                ('idle', 'is_idle'),
+                ('wait', 'is_waiting'), 'resources',
+                ('met', 'metal_mine.level'),
+                ('cry', 'crystal_mine.level'),
+                ('deut', 'deuterium_synthetizer.level'),
+                ('sol', 'solar_plant.level'),
+                ('transport', 'fleet.capacity'))
     _try_exit(0)
 
 def print_to_construct():
     print_lines(Factory().empire, 'name', ('construct', 'to_construct.name'),
-            ('level', 'to_construct.level'), ('cost', 'to_construct.cost'))
+            ('lvl', 'to_construct.level'), ('cost', 'to_construct.cost'))
     _try_exit(0)
 
 def unknown_display(display):
