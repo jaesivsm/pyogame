@@ -14,7 +14,7 @@ from pyogame.tools.resources import RES_TYPES, Resources
 from pyogame.tools.common import GalaxyRow
 
 logger = logging.getLogger(__name__)
-DEFAULT_WAIT_TIME = 40000
+DEFAULT_WAIT_TIME = 60000
 DEFAULT_JS_SLEEP = 1
 
 
@@ -68,7 +68,7 @@ class Interface(selenium):
         source = html.fromstring(self.get_html_source())
         for pos, ele in enumerate(source.xpath("//span[@class='level']")):
             try:
-                building = getattr(planet, constructions[pos].name)
+                building = getattr(planet, constructions[pos + 1].name)
             except KeyError:
                 continue
             building.level = int(ele.text_content().split()[-1])

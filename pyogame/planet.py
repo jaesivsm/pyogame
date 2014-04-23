@@ -44,6 +44,18 @@ class Planet(object):
     def is_waiting(self):
         return bool(self.waiting_for)
 
+    @property
+    def is_metal_tank_full(self):
+        return self.resources.metal >= self.metal_tank.capacity
+
+    @property
+    def is_crystal_tank_full(self):
+        return self.resources.crystal >= self.crystal_tank.capacity
+
+    @property
+    def is_deuterium_tank_full(self):
+        return self.resources.deuterium >= self.deuterium_tank.capacity
+
     def time_to_construct(self, cost):
         return ((float(cost.metal) + cost.crystal)
                 / (2500. * (float(self.robot_factory.level) + 1.)
@@ -54,16 +66,31 @@ class Planet(object):
         to_construct = self.metal_mine
         if self.deuterium_synthetizer.level < self.metal_mine.level - 7:
             to_construct = self.deuterium_synthetizer
-        if self.crystal_mine.level < self.metal_mine.level - 2:
+        if self.crystal_mine.level < self.metal_mine.level - 4:
             to_construct = self.crystal_mine
         # more or less 5%
         if to_construct.cost.energy * .95 > self.resources.energy:
             to_construct = self.solar_plant
-        if self.time_to_construct(to_construct.cost) \
-                / float(to_construct.level + 1) > 2:  # Fixed by experiment
-            if self.robot_factory.level < 10:
-                return self.robot_factory
-            return self.nanite_factory
+        #if self.time_to_construct(to_construct.cost) \
+        #        / float(to_construct.level + 1) > 2:  # Fixed by experiment
+        #    if self.robot_factory.level < 10:
+        #        to_construct = self.robot_factory
+        #    else:
+        #        to_construct = self.nanite_factory
+        if self.capital:
+            if self.metal_tank.capacity < to_construct.cost.metal:
+                to_construct = self.metal_tank
+            elif self.crystal_tank.capacity < to_construct.cost.crystal:
+                to_construct = self.crystal_tank
+            elif self.deuterium_tank.capacity < to_construct.cost.deuterium:
+                to_construct = self.deuterium_tank
+        else:
+            def should_construct_tank(mine, tank, ratio):
+                return float(mine.level) / (1 + tank.level) > ratio
+            if should_construct_tank(self.metal_mine, self.metal_tank, 7):
+                to_construct = self.metal_tank
+            elif should_construct_tank(self.crystal_mine, self.crystal_tank, 9):
+                to_construct = self.crystal_tank
         return to_construct
 
     @classmethod

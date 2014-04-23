@@ -8,7 +8,7 @@ def pstr(value, is_title=False):
     if isinstance(value, (list, set, tuple)):
         value = value[0]
     if is_title:
-        return value.capitalize()
+        return ' '.join(v.capitalize() for v in value.split())
     if isinstance(value, bool):
         return '+' if value else ''
     if isinstance(value, int):
@@ -67,16 +67,25 @@ def print_overall_status():
     print_lines(Factory().empire, 'name', 'key', ('cap', 'capital'),
                 ('idle', 'is_idle'),
                 ('wait', 'is_waiting'), 'resources',
-                ('met', 'metal_mine.level'),
-                ('cry', 'crystal_mine.level'),
-                ('deut', 'deuterium_synthetizer.level'),
-                ('sol', 'solar_plant.level'),
+                ('f m', 'is_metal_tank_full'),
+                ('f c', 'is_crystal_tank_full'),
+                ('f d', 'is_deuterium_tank_full'),
                 ('transport', 'fleet.capacity'))
     _try_exit(0)
 
 def print_to_construct():
-    print_lines(Factory().empire, 'name', ('construct', 'to_construct.name'),
-            ('lvl', 'to_construct.level'), ('cost', 'to_construct.cost'))
+    print_lines(Factory().empire, 'name',
+                ('met', 'metal_mine.level'),
+                ('cry', 'crystal_mine.level'),
+                ('deut', 'deuterium_synthetizer.level'),
+                ('sol', 'solar_plant.level'),
+                ('t m', 'metal_tank.level'),
+                ('t c', 'crystal_tank.level'),
+                ('t d', 'deuterium_tank.level'),
+                ('to construct', 'to_construct.name'),
+                ('lvl', 'to_construct.level'),
+                ('cost', 'to_construct.cost'))
+
     _try_exit(0)
 
 def unknown_display(display):

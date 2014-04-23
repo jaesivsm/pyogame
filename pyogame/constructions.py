@@ -75,13 +75,42 @@ class SolarPlant(Constructions):
     position = 4
 
 
+class Tank(Constructions):
+    base_metal_cost = 1000
+    power = 2
+    energy_factor = 0
+
+    @property
+    def capacity(self):  #FIXME fugly, couldn't find the true formula for that one
+        return {0: 10, 1: 20, 2: 40, 3: 75, 4: 140, 5: 255, 6: 470, 7: 865,
+                8: 1590, 9: 2920, 10: 5355, 11: 9820, 12: 18005, 13: 33005,
+                14: 60510, 15: 110925, 16: 203350, 17: 372785, 18: 683385,
+                19: 1252785, 20: 2296600}[self.level] * 1000
+
+
+class MetalTank(Tank):
+    position = 7
+
+
+class CrystalTank(Tank):
+    base_crystal_cost = 500
+    position = 8
+    power = 2
+
+
+class DeuteriumTank(Tank):
+    base_metal_cost = 1000
+    base_crystal_cost = 1000
+    position = 9
+
+
 class RobotFactory(Constructions):
     base_metal_cost = 400
     base_crystal_cost = 120
     base_deuterium_cost = 200
     power = 2
     energy_factor = 0
-    position = 0
+    position = 1
 
 
 class NaniteFactory(Constructions):
@@ -94,12 +123,15 @@ class NaniteFactory(Constructions):
 
 
 BUILDINGS = {
-        0: MetalMine(),
-        1: CrystalMine(),
-        2: DeuteriumSynthetizer(),
-        3: SolarPlant(),
+        1: MetalMine(),
+        2: CrystalMine(),
+        3: DeuteriumSynthetizer(),
+        4: SolarPlant(),
+        7: MetalTank(),
+        8: CrystalTank(),
+        9: DeuteriumTank(),
 }
 STATIONS = {
-        0: RobotFactory(),
+        1: RobotFactory(),
         5: NaniteFactory(),
 }

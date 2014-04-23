@@ -10,8 +10,9 @@ logger = logging.getLogger(__name__)
 def in_place_empire_upgrade():
     for planet in Factory().empire.idles:
         if planet.resources > planet.to_construct.cost:
-            logger.warn('Resources are available on %s to construct %s'
-                    % (planet, planet.to_construct))
+            logger.warn('Resources are available on %s to construct %s (lvl %d)'
+                    % (planet, planet.to_construct.name,
+                       planet.to_construct.level))
             Factory().interface.construct(planet.to_construct, planet)
 
 
