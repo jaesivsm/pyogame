@@ -64,7 +64,7 @@ class Planet(object):
     @property
     def to_construct(self):
         to_construct = self.metal_mine
-        if self.deuterium_synthetizer.level < self.metal_mine.level - 7:
+        if self.deuterium_synthetizer.level < self.metal_mine.level - 10:
             to_construct = self.deuterium_synthetizer
         if self.crystal_mine.level < self.metal_mine.level - 4:
             to_construct = self.crystal_mine

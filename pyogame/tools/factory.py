@@ -7,7 +7,7 @@ from pyogame.tools.const import CONF_PATH
 from pyogame.planet_collection import PlanetCollection
 from pyogame.interface import Interface
 
-CACHE_PATH_TEMPLATE = '%s.empire.cache'
+CACHE_PATH_TEMPLATE = 'cache.json'
 logger = logging.getLogger(__name__)
 
 
@@ -40,10 +40,6 @@ class Factory(object):
         return self._conf.get(self.username, {})
 
     @property
-    def cache_path(self):
-        return CACHE_PATH_TEMPLATE % self.username
-
-    @property
     def empire(self):
         new, empire = self.get_instance(PlanetCollection)
         if not new:
@@ -51,16 +47,14 @@ class Factory(object):
 
         empire.capital_coords = self.conf.get('capital')
         empire.loaded = False
-        if not os.path.exists(self.cache_path):
-            logger.debug('No cache file found at %r' % self.cache_path)
-            return empire
-        logger.debug('Loading objects from %r' % self.cache_path)
+        logger.debug('Loading objects from %r', CACHE_PATH_TEMPLATE)
         try:
-            with open(self.cache_path, 'r') as fp:
-                empire.load(**json.load(fp))
+            cache = self.load().get(self.username, None)
+            if not cache:
+                return empire
+            empire.load(**cache)
         except ValueError:
             logger.error('Cache has been corrupted, ignoring it')
-            os.remove(self.cache_path)
             return empire
         empire.loaded = True
         return empire
@@ -70,7 +64,17 @@ class Factory(object):
         new, interface = self.get_instance(Interface)
         return interface
 
+    def load(self):
+        if not os.path.exists(CACHE_PATH_TEMPLATE):
+            logger.debug('No cache file found at %r', CACHE_PATH_TEMPLATE)
+            return {}
+        with open(CACHE_PATH_TEMPLATE, 'r') as fp:
+            return json.load(fp)
+
     def dump(self):
+        cache = self.load()
+        cache[self.username] = self.empire.dump()
         handler = lambda o: o.isoformat() if isinstance(o, datetime) else None
-        with open(self.cache_path, 'w') as fp:
-            json.dump(self.empire.dump(), fp, default=handler)
+        with open(CACHE_PATH_TEMPLATE, 'w') as fp:
+            json.dump(cache, fp, indent=2,
+                      separators=(',', ': '), default=handler)
