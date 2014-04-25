@@ -78,11 +78,14 @@ class Planet(object):
         #    else:
         #        to_construct = self.nanite_factory
         if self.capital:
-            if self.metal_tank.capacity < to_construct.cost.metal:
+            if self.metal_tank.capacity < to_construct.cost.metal \
+                    or self.is_metal_tank_full:
                 to_construct = self.metal_tank
-            elif self.crystal_tank.capacity < to_construct.cost.crystal:
+            elif self.crystal_tank.capacity < to_construct.cost.crystal \
+                    or self.is_crystal_tank_full:
                 to_construct = self.crystal_tank
-            elif self.deuterium_tank.capacity < to_construct.cost.deuterium:
+            elif self.deuterium_tank.capacity < to_construct.cost.deuterium \
+                    or self.is_deuterium_tank_full:
                 to_construct = self.deuterium_tank
         else:
             def should_construct_tank(mine, tank, ratio):
