@@ -110,7 +110,16 @@ class RobotFactory(Constructions):
     base_deuterium_cost = 200
     power = 2
     energy_factor = 0
-    position = 1
+    position = 0
+
+
+class Laboratory(Constructions):
+    base_metal_cost = 200
+    base_crystal_cost = 400
+    base_deuterium_cost = 200
+    power = 2
+    energy_factor = 0
+    position = 2
 
 
 class NaniteFactory(Constructions):
@@ -133,5 +142,6 @@ BUILDINGS = {
 }
 STATIONS = {
         1: RobotFactory(),
-        5: NaniteFactory(),
+        3: Laboratory(),
+        6: NaniteFactory(),
 }

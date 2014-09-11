@@ -8,10 +8,13 @@ logger = logging.getLogger(__name__)
 
 
 def in_place_empire_upgrade():
+    logger.debug('### In place empire upgrade')
     factory = Factory()
     for planet in factory.empire.idles:
-        if planet.capital and not factory.conf.get('construct_on_capital'):
+        if planet.capital and not factory.conf.get('construct_on_capital', True):
             continue
+        logger.debug('%r > %r = %r', planet.resources , planet.to_construct.cost,
+                     planet.resources > planet.to_construct.cost)
         if planet.resources > planet.to_construct.cost:
             logger.warn("Resources are available on %s to construct %s "
                         "(lvl %d)", planet, planet.to_construct.name,
@@ -20,6 +23,7 @@ def in_place_empire_upgrade():
 
 
 def rapatriate(destination=None):
+    logger.debug('### rapatriate')
     empire = Factory().empire
     if not destination and empire.capital:
         destination = empire.capital
@@ -43,6 +47,7 @@ def rapatriate(destination=None):
 
 
 def plan_construction():
+    logger.debug('### plan construction')
     empire = Factory().empire
     source = empire.capital
     while True:
@@ -71,6 +76,7 @@ def plan_construction():
 
 
 def resources_reception_and_construction():
+    logger.debug('### Resources reception and construction')
     waited_constructs = {}
     empire = Factory().empire
 

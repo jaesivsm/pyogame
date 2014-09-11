@@ -36,7 +36,7 @@ class Interface(selenium):
                 yield txt.strip()
 
     def login(self):
-        logger.debug('Logging in with identity %r', self.user)
+        logger.debug('### Logging in with identity %r', self.user)
         self.open(self.url)
         self.click("id=loginBtn")
         self.select("id=serverLogin", "label=%s" % self.univers)
@@ -62,7 +62,7 @@ class Interface(selenium):
             logger.exception("ERROR: Couldn't update resources")
 
     def _parse_constructions(self, page, planet=None, constructions=[]):
-        logger.debug('updating %s states for %s', page, planet)
+        logger.debug('### updating %s states for %s', page, planet)
         planet, page = self.go_to(planet, page, update=False)
         source = html.fromstring(self.get_html_source())
         for pos, ele in enumerate(source.xpath("//span[@class='level']")):

@@ -11,6 +11,8 @@ def parse_args():
     parser.add_argument(dest='user', action='store', default=None)
     parser.add_argument('-d', '--debug', dest='debug',
             action='store_true', default=False)
+    parser.add_argument('-n', '--do-nothing', dest='do_nothing',
+            action='store_true', default=False)
     parser.add_argument('-q', '--quiet', dest='quiet',
             action='store_true', default=False)
     parser.add_argument('-v', '--verbose', dest='verbose',

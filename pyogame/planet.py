@@ -24,9 +24,25 @@ class Planet(object):
         self.building_updated = False
         self.fleet_updated = False
 
+        self.construction_plans = []
         for construction in BUILDINGS.values() + STATIONS.values():
             setattr(self, construction.name,
                     construction.__class__(kwargs.get(construction.name, 0)))
+
+        for planned_construct, lvl \
+                in kwargs.get('construction_plans', {}).items():
+            self.add_construction_plan(planned_construct, lvl)
+
+    def add_construction_plan(self, new_plan, level):
+        for planned_construct in self.construction_plans:
+            if new_plan == planned_construct.name:
+                planned_construct.level = level
+                return
+        for construction in BUILDINGS.values() + STATIONS.values():
+            if new_plan == construction.name \
+                    and getattr(self, construction.name).level < level:
+                self.construction_plans.append(construction.__class__(level))
+                return
 
     @property
     def key(self):
@@ -63,6 +79,16 @@ class Planet(object):
 
     @property
     def to_construct(self):
+        # Handling construction list
+        if self.construction_plans:
+            to_construct = None
+            for plan in self.construction_plans:
+                construction = getattr(self, plan.name)
+                if construction.level < plan.level and \
+                        (not to_construct or to_construct.cost > plan.cost):
+                    to_construct = construction
+            return to_construct
+
         to_construct = self.metal_mine
         if self.deuterium_synthetizer.level < self.metal_mine.level - 10:
             to_construct = self.deuterium_synthetizer
@@ -111,6 +137,9 @@ class Planet(object):
                 'capital': self.capital,
                 'fleet': self.fleet.dump(),
                 'resources': self.resources.dump(),
+                'construction_plans': {
+                    construction.name: construction.level
+                    for construction in self.construction_plans},
         }
 
         for constru in BUILDINGS.values() + STATIONS.values():

@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 
 
 class Factory(object):
-
     _instances = {}
     _conf = {}
 
@@ -72,6 +71,7 @@ class Factory(object):
             return json.load(fp)
 
     def dump(self):
+        logger.debug('Dumping objects to %r', CACHE_PATH_TEMPLATE)
         cache = self.load()
         cache[self.username] = self.empire.dump()
         handler = lambda o: o.isoformat() if isinstance(o, datetime) else None
