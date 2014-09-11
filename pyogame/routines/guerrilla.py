@@ -20,7 +20,7 @@ def check_neighborhood(area=[0, 20], mission=BOTH, planet=None):
         for factor in (1, -1):
             system = system_origin + distance * factor
             if not 0 <= system <= 500:
-                pass
+                continue
             for row in interface.browse_galaxy(galaxy, system, planet):
                 if mission in (SPY, BOTH) and row.inactive \
                         and not (row.vacation or row.noob):

@@ -36,8 +36,7 @@ class Interface(selenium):
                 yield txt.strip()
 
     def login(self):
-        self.start()
-        logger.debug('Logging in with identity %r' % self.user)
+        logger.debug('Logging in with identity %r', self.user)
         self.open(self.url)
         self.click("id=loginBtn")
         self.select("id=serverLogin", "label=%s" % self.univers)
@@ -57,13 +56,13 @@ class Interface(selenium):
             for res_type in RES_TYPES:
                 res = self.__split_text("//li[@id='%s_box']" % res_type, '.')
                 planet.resources[res_type] = int(''.join(res))
-            logger.info('updating resources on planet %s (%s)'
-                         % (planet, planet.resources))
+            logger.info('updating resources on planet %s (%s)',
+                        planet, planet.resources)
         except Exception:
             logger.exception("ERROR: Couldn't update resources")
 
     def _parse_constructions(self, page, planet=None, constructions=[]):
-        logger.debug('updating %s states for %s' % (page, planet))
+        logger.debug('updating %s states for %s', page, planet)
         planet, page = self.go_to(planet, page, update=False)
         source = html.fromstring(self.get_html_source())
         for pos, ele in enumerate(source.xpath("//span[@class='level']")):
@@ -90,13 +89,13 @@ class Interface(selenium):
         if not force and planet.fleet_updated:
             return
         planet, page = self.go_to(planet, 'fleet1', update=False)
-        logger.info('updating fleet states on %s' % planet)
+        logger.info('updating fleet states on %s', planet)
         planet.fleet.clear()
         source = html.fromstring(self.get_html_source())
         for fleet_type in ('military', 'civil'):
             fleet = source.xpath("//ul[@id='%s']" % fleet_type)
             if len(fleet) < 1:
-                logger.debug('No %s fleet on %s' % (fleet_type, planet))
+                logger.debug('No %s fleet on %s', fleet_type, planet)
                 continue
             for ships in fleet[0]:
                 ships_id = ships.get('id')
@@ -108,8 +107,8 @@ class Interface(selenium):
                 ships_str = cls[0].text_content().split()
                 planet.fleet.add(ships_id,
                         name=' '.join(ships_str[:-1]),
-                        quantity=int(ships_str[-1]))
-        logger.debug('%s got fleet %s' % (planet, planet.fleet))
+                        quantity=int(ships_str[-1].replace('.', '')))
+        logger.debug('%s got fleet %s', planet, planet.fleet)
         planet.fleet_updated = True
 
     def update_empire_overall(self):
@@ -130,7 +129,7 @@ class Interface(selenium):
             planets_list = source.xpath("//div[@id='planetList']")[0]
         except IndexError:  # FIXME ugly, shouldn't be here, invoking exit bad
             logger.error("Couldn't get the planet list. "
-                    "Is your login page the right one? See configuration")
+                         "Is your login page the right one? See configuration")
             exit(1)
         for position, elem in enumerate(planets_list):
             name = elem.find_class('planet-name')[0].text.strip()
@@ -140,8 +139,8 @@ class Interface(selenium):
         self.empire.loaded = True
 
     def crawl(self, resources=True, **kwargs):
-        logger.info("Will crawl all empire for %s"
-                % ', '.join([key for key in kwargs if kwargs[key] is True]))
+        logger.info("Will crawl all empire for %s",
+                    ', '.join([key for key in kwargs if kwargs[key] is True]))
         noc = lambda x: None
         update_funcs = {
                 'resources': self.update_planet_buildings \
@@ -178,13 +177,13 @@ class Interface(selenium):
 
     def go_to(self, planet=None, page=None, update=True):
         if planet is not None and self.current_planet is not planet:
-            logger.debug('Going to planet %s' % planet)
+            logger.debug('Going to planet %s', planet)
             self.click("//div[@id='planetList']/div[%d]/a" % (planet.position))
             self.current_planet = planet
             self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
         if page is not None and self.current_page != page:
-            logger.debug('Going to page %s' % page)
+            logger.debug('Going to page %s', page)
             self.click("css=a[href=\"%s?page=%s\"]" % (self.server_url, page))
             self.current_page = page
             self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
@@ -241,7 +240,7 @@ class Interface(selenium):
 
     def browse_galaxy(self, galaxy, system, planet=None):
         self.go_to(planet, 'galaxy')
-        logger.debug('Browsing system %r on galaxy %r' % (system, galaxy))
+        logger.debug('Browsing system %r on galaxy %r', system, galaxy)
         self.type("id=galaxy_input", galaxy)
         self.type("id=system_input", system)
         self.click("id=showbutton")

@@ -47,9 +47,9 @@ class Fleet(Collection):
         fleet, amount = Fleet(), resources.movable.total
         assert self, 'fleet is empty !'
         if self.capacity < amount:
-            logger.error('Too many resources (%s) for fleet %r with capacity %s'
-                    % (pretty_number(amount), self,
-                       pretty_number(self.capacity)))
+            logger.error('Too many resources (%s) for fleet %r with capacity '
+                         '%s', pretty_number(amount), self,
+                               pretty_number(self.capacity))
             return self
         cmp_func = lambda x,y: cmp(x.capacity, y.capacity)
         for ships in sorted(self, cmp=cmp_func, reverse=True):

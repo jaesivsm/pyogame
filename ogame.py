@@ -7,19 +7,7 @@ Outil en ligne de commande pour inscrire des actions
 from pyogame import tools, scenarii, routines
 
 
-if __name__ == "__main__":
-    args, logfile, loglevel = tools.parse_args()
-    factory = tools.Factory(args.user)
-    logger = tools.set_logger(logfile, args.user, loglevel)
-
-    if args.ui:
-        if args.ui == 'overall':
-            tools.ui.print_overall_status()
-        elif args.ui == 'toconstruct':
-            tools.ui.print_to_construct()
-        else:
-            tools.ui.unknown_display(args.ui)
-
+def main(factory, args):
     factory.interface.login()
     factory.interface.update_empire_overall()
     factory.interface.crawl(building=True, fleet=True, station=True)
@@ -45,7 +33,27 @@ if __name__ == "__main__":
         routines.civil.resources_reception_and_construction()
         routines.civil.rapatriate()
         routines.civil.plan_construction()
-    factory.interface.stop()
-    factory.dump()
+
+
+if __name__ == "__main__":
+    args, logfile, loglevel = tools.parse_args()
+    logger = tools.set_logger(logfile, args.user, loglevel)
+
+    factory = tools.Factory(args.user)
+
+    if args.ui:
+        if args.ui == 'overall':
+            tools.ui.print_overall_status()
+        elif args.ui == 'toconstruct':
+            tools.ui.print_to_construct()
+        else:
+            tools.ui.unknown_display(args.ui)
+
+    try:
+        factory.interface.start()
+        main(factory, args)
+    finally:
+        factory.interface.stop()
+        factory.dump()
 
 # vim: set et sts=4 sw=4 tw=120:

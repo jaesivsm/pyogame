@@ -11,7 +11,7 @@ class Constructions(object):
     base_crystal_cost = 0
     base_deuterium_cost = 0
     power = 1.5
-    energy_factor = 10
+    energy_factor = 0
     cmp_factor = 1
     position = 0
 
@@ -52,6 +52,7 @@ class MetalMine(Constructions):
     base_metal_cost = 60
     base_crystal_cost = 15
     position = 1
+    energy_factor = 10
 
 
 class CrystalMine(Constructions):
@@ -59,6 +60,7 @@ class CrystalMine(Constructions):
     base_crystal_cost = 24
     power = 1.6
     position = 2
+    energy_factor = 10
 
 
 class DeuteriumSynthetizer(Constructions):
@@ -71,14 +73,12 @@ class DeuteriumSynthetizer(Constructions):
 class SolarPlant(Constructions):
     base_metal_cost = 75
     base_crystal_cost = 30
-    energy_factor = 20
     position = 4
 
 
 class Tank(Constructions):
     base_metal_cost = 1000
     power = 2
-    energy_factor = 0
 
     @property
     def capacity(self):  #FIXME fugly, couldn't find the true formula for that one

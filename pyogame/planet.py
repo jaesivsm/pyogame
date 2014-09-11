@@ -66,7 +66,7 @@ class Planet(object):
         to_construct = self.metal_mine
         if self.deuterium_synthetizer.level < self.metal_mine.level - 10:
             to_construct = self.deuterium_synthetizer
-        if self.crystal_mine.level < self.metal_mine.level - 4:
+        if self.crystal_mine.level < self.metal_mine.level - 5:
             to_construct = self.crystal_mine
         # more or less 5%
         if to_construct.cost.energy * .95 > self.resources.energy:

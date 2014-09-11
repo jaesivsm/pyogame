@@ -68,6 +68,10 @@ class PlanetCollection(common.Collection):
         "return the planet with the cheapest construction of any type"
         cheapest = None
         for planet in self:
+            if planet.capital:
+                from pyogame.tools.factory import Factory
+                if not Factory().conf.get('construct_on_capital', True):
+                    continue
             if not cheapest:
                 cheapest = planet
             elif planet.to_construct.cost.movable.total \
