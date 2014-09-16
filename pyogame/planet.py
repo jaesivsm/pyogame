@@ -84,15 +84,16 @@ class Planet(object):
             to_construct = None
             for plan in self.construction_plans:
                 construction = getattr(self, plan.name)
-                if construction.level < plan.level and \
-                        (not to_construct or to_construct.cost > plan.cost):
+                if construction.level < plan.level and (not to_construct
+                        or to_construct.cost.total > construction.cost.total):
                     to_construct = construction
-            return to_construct
+            if to_construct is not None:
+                return to_construct
 
         to_construct = self.metal_mine
-        if self.deuterium_synthetizer.level < self.metal_mine.level - 10:
+        if self.deuterium_synthetizer.level < self.metal_mine.level - 7:
             to_construct = self.deuterium_synthetizer
-        if self.crystal_mine.level < self.metal_mine.level - 5:
+        if self.crystal_mine.level < self.metal_mine.level - 3:
             to_construct = self.crystal_mine
         # more or less 5%
         if to_construct.cost.energy * .95 > self.resources.energy:

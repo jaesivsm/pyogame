@@ -15,8 +15,8 @@ def main(factory, args):
         routines.civil.rapatriate()
     if args.construct:
         routines.civil.in_place_empire_upgrade()
-        routines.civil.plan_construction()
         routines.civil.resources_reception_and_construction()
+        routines.civil.plan_construction()
     if args.probes:
         routines.guerrilla.check_neighborhood(
                 [args.area_start, args.area_end],

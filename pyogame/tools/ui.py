@@ -82,6 +82,8 @@ def print_to_construct():
                 ('t m', 'metal_tank.level'),
                 ('t c', 'crystal_tank.level'),
                 ('t d', 'deuterium_tank.level'),
+                ('rob', 'robot_factory.level'),
+                ('lab', 'laboratory.level'),
                 ('to construct', 'to_construct.name'),
                 ('lvl', 'to_construct.level'),
                 ('cost', 'to_construct.cost'))

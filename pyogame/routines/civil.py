@@ -18,7 +18,7 @@ def in_place_empire_upgrade():
         if planet.resources > planet.to_construct.cost:
             logger.warn("Resources are available on %s to construct %s "
                         "(lvl %d)", planet, planet.to_construct.name,
-                        planet.to_construct.level)
+                        planet.to_construct.level + 1)
             factory.interface.construct(planet.to_construct, planet)
 
 
