@@ -1,4 +1,5 @@
 import logging
+from itertools import chain
 
 from pyogame.tools import Resources
 from pyogame.fleet import Fleet
@@ -8,7 +9,7 @@ from pyogame.tools.common import coords_to_key
 logger = logging.getLogger(__name__)
 
 
-class Planet(object):
+class Planet:
 
     def __init__(self, name, coords, position, **kwargs):
         self.name = name
@@ -25,7 +26,7 @@ class Planet(object):
         self.fleet_updated = False
 
         self.construction_plans = []
-        for construction in BUILDINGS.values() + STATIONS.values():
+        for construction in chain(BUILDINGS.values(), STATIONS.values()):
             setattr(self, construction.name,
                     construction.__class__(kwargs.get(construction.name, 0)))
 

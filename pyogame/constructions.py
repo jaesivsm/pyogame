@@ -6,7 +6,7 @@ from pyogame.tools.resources import Resources
 logger = logging.getLogger(__name__)
 
 
-class Constructions(object):
+class Constructions:
     base_metal_cost = 0
     base_crystal_cost = 0
     base_deuterium_cost = 0
@@ -17,6 +17,7 @@ class Constructions(object):
 
     def __init__(self, level=0):
         self.level = level
+        self.buildable = False
 
     def _cost(self, res, level=None):
         level = level if level else self.level

@@ -2,9 +2,12 @@
 import re
 import time
 import logging
-from lxml import html
-from selenium import selenium
 from datetime import datetime
+
+from lxml import html
+from selenium import webdriver
+from selenium.webdriver.support.ui import Select
+
 
 from pyogame.planet import Planet
 from pyogame.fleet import FlyingFleet
@@ -18,35 +21,36 @@ DEFAULT_WAIT_TIME = 60000
 DEFAULT_JS_SLEEP = 1
 
 
-class Interface(selenium):
+class Interface:
 
     def __init__(self, user, password, univers, lang='fr', **kwargs):
+        self.driver = webdriver.Firefox()
         self.url = "http://%s.ogame.gameforge.com/" % lang
-        selenium.__init__(self, "localhost", 4444, "*chrome", self.url)
+
         self.current_planet = None
         self.current_page = None
         self.user, self.password, self.univers = user, password, univers
         from pyogame.tools.factory import Factory
-        self.__factory = Factory()
-        self.empire = self.__factory.empire
+        self.empire = Factory().empire
 
     def __split_text(self, xpath, split_on='\n'):
-        for txt in self.get_text(xpath).split(split_on):
+        for txt in self.driver.get_text(xpath).split(split_on):
             if txt.strip():
                 yield txt.strip()
 
     def login(self):
-        logger.debug('### Logging in with identity %r', self.user)
-        self.open(self.url)
-        self.click("id=loginBtn")
-        self.select("id=serverLogin", "label=%s" % self.univers)
-        self.type("id=usernameLogin", self.user)
-        self.type("id=passwordLogin", self.password)
-        self.click("id=loginSubmit")
-        self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
+        logger.debug('### Logging in with identity %r', self.user)
+        self.driver.get(self.url)
+        self.driver.find_element_by_id("loginBtn").click()
+        Select(self.driver.find_element_by_id('serverLogin'))\
+                .select_by_visible_text(self.univers)
+        self.driver.find_element_by_id("usernameLogin").send_keys(self.user)
+        self.driver.find_element_by_id("passwordLogin")\
+                .send_keys(self.password)
+        self.driver.find_element_by_id("loginSubmit").click()
 
         time.sleep(DEFAULT_JS_SLEEP)
-        self.server_url = selenium.get_location(self).split('?')[0]
+        self.server_url = self.driver.get_location(self).split('?')[0]
         self.discover()
         self.update_empire_overall()
 
@@ -88,7 +92,7 @@ class Interface(selenium):
         planet = planet if planet else self.current_planet
         if not force and planet.fleet_updated:
             return
-        planet, page = self.go_to(planet, 'fleet1', update=False)
+        planet, page = self.driver.go_to(planet, 'fleet1', update=False)
         logger.info('updating fleet states on %s', planet)
         planet.fleet.clear()
         source = html.fromstring(self.get_html_source())
@@ -113,7 +117,7 @@ class Interface(selenium):
 
     def update_empire_overall(self):
         logger.info('updating empire overall')
-        source = html.fromstring(self.get_html_source())
+        source = html.fromstring(self.driver.get_html_source())
         planets_list = source.xpath("//div[@id='planetList']")[0]
         for position, elem in enumerate(planets_list):
             self.empire.planets[position + 1].idle = False \
@@ -124,7 +128,7 @@ class Interface(selenium):
         if self.empire.loaded:
             return
         logger.debug('Getting list of colonized planets')
-        source = html.fromstring(self.get_html_source())
+        source = html.fromstring(self.driver.get_html_source())
         try:
             planets_list = source.xpath("//div[@id='planetList']")[0]
         except IndexError:  # FIXME ugly, shouldn't be here, invoking exit bad
@@ -197,7 +201,7 @@ class Interface(selenium):
         return self.current_planet, self.current_page
 
     def get_date(self, css_id):
-        date =  re.split('[\.: ]', self.get_text("//span[@id='%s']" % css_id))
+        date = re.split('[\.: ]', self.get_text("//span[@id='%s']" % css_id))
         day, month, year, hour, minute, second = [int(i) for i in date]
         return datetime(year + 2000, month, day, hour, minute, second)
 

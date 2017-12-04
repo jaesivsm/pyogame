@@ -37,7 +37,7 @@ def parse_args():
             action='store', default=False)
     parser.add_argument('-i', '--idles', dest='idles',
             action='store_true', default=False)
-    parser.add_argument( '--ui', dest='ui',
+    parser.add_argument('--ui', dest='ui',
             action='store', default=False)
     args = parser.parse_args()
     if args.quiet:

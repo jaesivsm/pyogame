@@ -63,11 +63,7 @@ if __name__ == "__main__":
             factory.empire.capital.add_construction_plan(construct_name, level)
 
     if not args.do_nothing:
-        try:
-            factory.interface.start()
-            main(factory, args)
-        finally:
-            factory.interface.stop()
+        main(factory, args)
     factory.dump()
 
 # vim: set et sts=4 sw=4 tw=120:

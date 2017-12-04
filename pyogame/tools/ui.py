@@ -13,11 +13,11 @@ def pstr(value, is_title=False):
         return '+' if value else ''
     if isinstance(value, int):
         return pretty_number(value)
-    return unicode(value)
+    return value
 
 
 def get_attr(element, attrs):
-    if not type(attrs) is str:
+    if not isinstance(attrs, str):
         attrs = attrs[1]
     for attr in attrs.split('.'):
         element = getattr(element, attr)
@@ -45,17 +45,17 @@ def print_lines(iterable, *columns):
         value = pstr(column, is_title=True)
         line += add_to_line(value)
         sep_line += add_to_line('-' * len(value), '-', '+')
-    print sep_line
-    print line
-    print sep_line
+    print(sep_line)
+    print(line)
+    print(sep_line)
 
     for element in iterable:
         line = '|'
         for column in columns:
             value = pstr(get_attr(element, column))
             line += add_to_line(value)
-        print line
-    print sep_line
+        print(line)
+    print(sep_line)
 
 def _try_exit(exit_status):
     try:
@@ -91,5 +91,5 @@ def print_to_construct():
     _try_exit(0)
 
 def unknown_display(display):
-    print "Unknown display: %r" % display
+    print("Unknown display: %r" % display)
     _try_exit(1)
