@@ -17,7 +17,7 @@ from pyogame.tools.resources import RES_TYPES, Resources
 from pyogame.tools.common import GalaxyRow
 
 logger = logging.getLogger(__name__)
-DEFAULT_WAIT_TIME = 60000
+DEFAULT_WAIT_TIME = 10  # seconds
 DEFAULT_JS_SLEEP = 1
 
 
@@ -25,7 +25,9 @@ class Interface:
 
     def __init__(self, user, password, univers, lang='fr', **kwargs):
         self.driver = webdriver.Firefox()
+        self.driver.implicitly_wait(DEFAULT_WAIT_TIME)
         self.url = "http://%s.ogame.gameforge.com/" % lang
+        self.server_url = None
 
         self.current_planet = None
         self.current_page = None
@@ -34,7 +36,8 @@ class Interface:
         self.empire = Factory().empire
 
     def __split_text(self, xpath, split_on='\n'):
-        for txt in self.driver.get_text(xpath).split(split_on):
+        for txt in self.driver.find_element_by_xpath(xpath)\
+                .text.split(split_on):
             if txt.strip():
                 yield txt.strip()
 
@@ -47,15 +50,25 @@ class Interface:
         self.driver.find_element_by_id("usernameLogin").send_keys(self.user)
         self.driver.find_element_by_id("passwordLogin")\
                 .send_keys(self.password)
-        self.driver.find_element_by_id("loginSubmit").click()
+        self.click(id_='loginSubmit')
 
         time.sleep(DEFAULT_JS_SLEEP)
-        self.server_url = self.driver.get_location(self).split('?')[0]
+        self.server_url = self.driver.current_url.split('?')[0]
         self.discover()
         self.update_empire_overall()
 
+    def click(self, id_=None, name=None, xpath=None):
+        if id_ is not None:
+            elem = self.driver.find_element_by_id(id_).click()
+        elif name is not None:
+            elem = self.driver.find_element_by_name(name)
+        elif xpath is not None:
+            elem = self.driver.find_element_by_xpath(xpath)
+        elem.click()
+        return elem
+
     def update_planet_resources(self, planet=None):
-        planet, page = self.go_to(planet, update=False)
+        planet, _ = self.go_to(planet, update=False)
         try:
             for res_type in RES_TYPES:
                 res = self.__split_text("//li[@id='%s_box']" % res_type, '.')
@@ -65,10 +78,11 @@ class Interface:
         except Exception:
             logger.exception("ERROR: Couldn't update resources")
 
-    def _parse_constructions(self, page, planet=None, constructions=[]):
+    def _parse_constructions(self, page, planet=None, constructions=None):
+        constructions = constructions or []
         logger.debug('### updating %s states for %s', page, planet)
         planet, page = self.go_to(planet, page, update=False)
-        source = html.fromstring(self.get_html_source())
+        source = html.fromstring(self.driver.page_source)
         for pos, ele in enumerate(source.xpath("//span[@class='level']")):
             try:
                 building = getattr(planet, constructions[pos + 1].name)
@@ -92,11 +106,11 @@ class Interface:
         planet = planet if planet else self.current_planet
         if not force and planet.fleet_updated:
             return
-        planet, page = self.driver.go_to(planet, 'fleet1', update=False)
+        planet, _ = self.go_to(planet, 'fleet1', update=False)
         logger.info('updating fleet states on %s', planet)
         planet.fleet.clear()
-        source = html.fromstring(self.get_html_source())
-        for fleet_type in ('military', 'civil'):
+        source = html.fromstring(self.driver.page_source)
+        for fleet_type in 'military', 'civil':
             fleet = source.xpath("//ul[@id='%s']" % fleet_type)
             if len(fleet) < 1:
                 logger.debug('No %s fleet on %s', fleet_type, planet)
@@ -117,7 +131,7 @@ class Interface:
 
     def update_empire_overall(self):
         logger.info('updating empire overall')
-        source = html.fromstring(self.driver.get_html_source())
+        source = html.fromstring(self.driver.page_source)
         planets_list = source.xpath("//div[@id='planetList']")[0]
         for position, elem in enumerate(planets_list):
             self.empire.planets[position + 1].idle = False \
@@ -128,7 +142,7 @@ class Interface:
         if self.empire.loaded:
             return
         logger.debug('Getting list of colonized planets')
-        source = html.fromstring(self.driver.get_html_source())
+        source = html.fromstring(self.driver.page_source)
         try:
             planets_list = source.xpath("//div[@id='planetList']")[0]
         except IndexError:  # FIXME ugly, shouldn't be here, invoking exit bad
@@ -174,23 +188,22 @@ class Interface:
         else:
             page = 'station'
         self.go_to(planet, page, update=False)
-        self.click(construction.css_dom)
-        self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
+        self.click(xpath=construction.css_dom)
         self.update_empire_overall()
         self.update_planet_resources(planet)
 
     def go_to(self, planet=None, page=None, update=True):
         if planet is not None and self.current_planet is not planet:
             logger.debug('Going to planet %s', planet)
-            self.click("//div[@id='planetList']/div[%d]/a" % (planet.position))
+            self.click(xpath="//div[@id='planetList']/div[%d]/a"
+                       % (planet.position))
             self.current_planet = planet
-            self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
         if page is not None and self.current_page != page:
             logger.debug('Going to page %s', page)
-            self.click("css=a[href=\"%s?page=%s\"]" % (self.server_url, page))
+            self.click(xpath="css=a[href=\"%s?page=%s\"]"
+                       % (self.server_url, page))
             self.current_page = page
-            self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
 
         if update:
             self.update_planet_resources(planet)
@@ -201,7 +214,9 @@ class Interface:
         return self.current_planet, self.current_page
 
     def get_date(self, css_id):
-        date = re.split('[\.: ]', self.get_text("//span[@id='%s']" % css_id))
+        date = re.split(r'[\.: ]',
+                self.driver.find_element_by_xpath(
+                    "//span[@id='%s']" % css_id).text)
         day, month, year, hour, minute, second = [int(i) for i in date]
         return datetime(year + 2000, month, day, hour, minute, second)
 
@@ -215,29 +230,26 @@ class Interface:
 
         sent_fleet = FlyingFleet(src.coords, dst, mission)
         for ships in fleet:
-            self.type('id=ship_%d' % ships.ships_id, ships.quantity)
+            self.driver.find_element_by_id('ship_%d' % ships.ships_id)\
+                    .send_keys(ships.quantity)
             sent_fleet.add(ships=ships)
             src.fleet.remove(ships=ships)
 
-        self.click("css=#continue > span")
-        self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
+        self.click(xpath="css=#continue > span")
 
-        self.type("id=galaxy", dst[0])
-        self.type("id=system", dst[1])
-        self.type("id=position", dst[2])
-        self.click(MISSIONS_DST[dtype])
-        self.click("css=#continue > span")
-        self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
+        self.driver.find_element_by_id("galaxy").send_keys(dst[0])
+        self.driver.find_element_by_id("system").send_keys(dst[1])
+        self.driver.find_element_by_id("position").send_keys(dst[2])
+        self.click(xpath=MISSIONS_DST[dtype])
+        self.click(xpath="css=#continue > span")
 
-        self.click(MISSIONS[mission])
+        self.click(xpath=MISSIONS[mission])
         for res_type, quantity in resources.movable:
-            self.type('id=%s' % res_type, quantity)
-        time.sleep(DEFAULT_JS_SLEEP)
+            self.driver.find_element_by_id(res_type).send_keys(quantity)
         sent_fleet.arrival_time = self.get_date('arrivalTime')
         sent_fleet.return_time = self.get_date('returnTime')
 
-        self.click("css=#start > span")
-        self.wait_for_page_to_load(DEFAULT_WAIT_TIME)
+        self.click(xpath="css=#start > span")
         self.current_page = None
         self.update_planet_resources(src)
         return sent_fleet
@@ -245,11 +257,11 @@ class Interface:
     def browse_galaxy(self, galaxy, system, planet=None):
         self.go_to(planet, 'galaxy')
         logger.debug('Browsing system %r on galaxy %r', system, galaxy)
-        self.type("id=galaxy_input", galaxy)
-        self.type("id=system_input", system)
-        self.click("id=showbutton")
+        self.driver.find_element_by_id('galaxy_input').send_keys(galaxy)
+        self.driver.find_element_by_id("system_input").send_keys(system)
+        self.click(id_="showbutton")
         time.sleep(DEFAULT_JS_SLEEP)
-        source = html.fromstring(self.get_html_source())
+        source = html.fromstring(self.driver.page_source)
         for position, row in enumerate(
                 source.xpath('//table[@id="galaxytable"]//tbody//tr')):
             if row.find_class('planetEmpty'):
