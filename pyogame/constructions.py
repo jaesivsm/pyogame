@@ -28,7 +28,7 @@ class Constructions:
 
     @property
     def css_dom(self):
-        return "css=#button%d a.fastBuild" % self.position
+        return "#button%d a.fastBuild" % self.position
 
     @property
     def name(self):

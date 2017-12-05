@@ -13,12 +13,12 @@ def in_place_empire_upgrade():
     for planet in factory.empire.idles:
         if planet.capital and not factory.conf.get('construct_on_capital', True):
             continue
-        logger.debug('%r > %r = %r', planet.resources , planet.to_construct.cost,
-                     planet.resources > planet.to_construct.cost)
-        if planet.resources > planet.to_construct.cost:
-            logger.warn("Resources are available on %s to construct %s "
-                        "(lvl %d)", planet, planet.to_construct.name,
-                        planet.to_construct.level + 1)
+        logger.debug('%r > %r = %r', planet.resources, planet.to_construct.cost,
+                     planet.resources >= planet.to_construct.cost)
+        if planet.resources >= planet.to_construct.cost:
+            logger.warning("Resources are available on %s to construct %s "
+                           "(lvl %d)", planet, planet.to_construct.name,
+                           planet.to_construct.level + 1)
             factory.interface.construct(planet.to_construct, planet)
 
 
@@ -34,7 +34,7 @@ def rapatriate(destination=None):
         if destination is source:
             continue
         if not source.fleet:
-            logger.info('no fleet on %s' % source)
+            logger.info('no fleet on %s', source)
             continue
         if float(source.resources.total) / source.fleet.capacity < 2. / 3 \
                 and not source.is_metal_tank_full \
@@ -68,8 +68,8 @@ def plan_construction():
                         source, source.fleet.capacity)
             break
 
-        logger.warn('Sending resources to construct %s on %s',
-                    planet.to_construct, planet)
+        logger.warning('Sending resources to construct %s on %s',
+                       planet.to_construct, planet)
         travel_id = transport(source, planet, resources=cost)
 
         planet.waiting_for[travel_id] = planet.to_construct.name
@@ -105,8 +105,8 @@ def resources_reception_and_construction():
             # we count how many of this construction are waiting on this planet
             waited_travel = planet.waiting_for.values().count(construct)
             if waited_constr == waited_travel:
-                logger.warn("All fleet arrived to construct %s on %s, "
-                            "launching construction.", construct, planet)
+                logger.warning("All fleet arrived to construct %s on %s, "
+                               "launching construction.", construct, planet)
                 Factory().interface.construct(construct, planet)
                 for travel_id, c in planet.waiting_for.items():
                     if c == construct:

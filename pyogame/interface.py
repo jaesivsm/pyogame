@@ -205,7 +205,7 @@ class Interface:
         else:
             page = Pages.station
         self.go_to(planet, page, update=False)
-        self.click(xpath=construction.css_dom)
+        self.click(css=construction.css_dom)
         self.update_empire_overall()
         self.update_planet_resources(planet)
 
@@ -257,10 +257,10 @@ class Interface:
         self.driver.find_element_by_id("galaxy").send_keys(dst[0])
         self.driver.find_element_by_id("system").send_keys(dst[1])
         self.driver.find_element_by_id("position").send_keys(dst[2])
-        self.click(xpath=MISSIONS_DST[dtype])
+        self.click(id_=MISSIONS_DST[dtype])
         self.click(css="#continue > span")
 
-        self.click(xpath=MISSIONS[mission])
+        self.click(css=MISSIONS[mission])
         for res_type, quantity in resources.movable:
             self.driver.find_element_by_id(res_type).send_keys(quantity)
         sent_fleet.arrival_time = self.get_date('arrivalTime')

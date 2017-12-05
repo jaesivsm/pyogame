@@ -144,7 +144,7 @@ class Planet:
                     for construction in self.construction_plans},
         }
 
-        for constru in BUILDINGS.values() + STATIONS.values():
+        for constru in chain(BUILDINGS.values(), STATIONS.values()):
             dump[constru.name] = getattr(self, constru.name).level
         return dump
 

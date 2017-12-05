@@ -3,8 +3,8 @@ RES_TYPES = ['metal', 'crystal', 'deuterium', 'energy']
 
 def pretty_number(number, split=3, short=True):
     number = str(int(number))
-    browse = zip(xrange(-split, -len(number)-split, -split),
-                 xrange(0, -len(number)-split, -split))
+    browse = zip(range(-split, -len(number)-split, -split),
+                 range(0, -len(number)-split, -split))
     lst = [number[start:end if end else None] for start, end in browse][::-1]
     if not short:
         return '.'.join(lst)
@@ -14,7 +14,7 @@ def pretty_number(number, split=3, short=True):
     return '.'.join(lst[:precis]) + multiple.get((len(lst)-precis) * split, '')
 
 
-class Resources(object):
+class Resources:
 
     def __init__(self, metal=0, crystal=0, deuterium=0, energy=0):
         self.metal = int(metal)
@@ -54,15 +54,25 @@ class Resources(object):
             raise TypeError('Resources attributes must be in %r' % RES_TYPES)
         return setattr(self, key, value)
 
-    def __cmp__(self, other):
-        comp = {}
-        for res_type, amount in self.movable:  #Only compares what can be moved
-            if amount < other[res_type]:
-                return -1
-            comp[res_type] = self[res_type] > other[res_type]
-        if comp.values().count(False) == 4:
-            return 0
-        return 1
+    def __eq__(self, other):
+        return all(amount == other[res_type]
+                   for res_type, amount in self.movable)
+
+    def __gt__(self, other):
+        return all(amount > other[res_type]
+                   for res_type, amount in self.movable)
+
+    def __ge__(self, other):
+        return all(amount >= other[res_type]
+                   for res_type, amount in self.movable)
+
+    def __lt__(self, other):
+        return any(amount < other[res_type]
+                   for res_type, amount in self.movable)
+
+    def __le__(self, other):
+        return any(amount <= other[res_type]
+                   for res_type, amount in self.movable)
 
     def __len__(self):
         return sum(dict(self.__iter__()).values())
