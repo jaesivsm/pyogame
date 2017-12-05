@@ -3,6 +3,7 @@ import re
 import time
 import logging
 from datetime import datetime
+from enum import Enum
 
 from lxml import html
 from selenium import webdriver
@@ -21,6 +22,18 @@ DEFAULT_WAIT_TIME = 10  # seconds
 DEFAULT_JS_SLEEP = 1
 
 
+class Pages(Enum):
+    overview = 'overview'
+    resources = 'resources'
+    station = 'station'
+    research = 'research'
+    shipyard = 'shipyard'
+    defense = 'defense'
+    fleet = 'fleet1'
+    movement = 'movement'
+    galaxy = 'galaxy'
+
+
 class Interface:
 
     def __init__(self, user, password, univers, lang='fr', **kwargs):
@@ -30,7 +43,7 @@ class Interface:
         self.server_url = None
 
         self.current_planet = None
-        self.current_page = None
+        self.current_page = Pages.overview
         self.user, self.password, self.univers = user, password, univers
         from pyogame.tools.factory import Factory
         self.empire = Factory().empire
@@ -57,13 +70,17 @@ class Interface:
         self.discover()
         self.update_empire_overall()
 
-    def click(self, id_=None, name=None, xpath=None):
+    def click(self, id_=None, name=None, xpath=None, css=None):
         if id_ is not None:
-            elem = self.driver.find_element_by_id(id_).click()
+            elem = self.driver.find_element_by_id(id_)
         elif name is not None:
             elem = self.driver.find_element_by_name(name)
         elif xpath is not None:
             elem = self.driver.find_element_by_xpath(xpath)
+        elif css is not None:
+            elem = self.driver.find_element_by_css_selector(css)
+        else:
+            raise ValueError('Interface.click must be provided at least one')
         elem.click()
         return elem
 
@@ -93,20 +110,20 @@ class Interface:
     def update_planet_buildings(self, planet=None, force=False):
         planet = planet if planet else self.current_planet
         if force or not planet.building_updated:
-            self._parse_constructions('resources', planet, BUILDINGS)
+            self._parse_constructions(Pages.resources, planet, BUILDINGS)
             planet.building_updated = True
 
     def update_planet_stations(self, planet=None, force=False):
         planet = planet if planet else self.current_planet
         if force or not planet.station_updated:
-            self._parse_constructions('station', planet, STATIONS)
+            self._parse_constructions(Pages.station, planet, STATIONS)
             planet.station_updated = True
 
     def update_planet_fleet(self, planet=None, force=False):
         planet = planet if planet else self.current_planet
         if not force and planet.fleet_updated:
             return
-        planet, _ = self.go_to(planet, 'fleet1', update=False)
+        planet, _ = self.go_to(planet, Pages.fleet, update=False)
         logger.info('updating fleet states on %s', planet)
         planet.fleet.clear()
         source = html.fromstring(self.driver.page_source)
@@ -161,11 +178,11 @@ class Interface:
                     ', '.join([key for key in kwargs if kwargs[key] is True]))
         noc = lambda x: None
         update_funcs = {
-                'resources': self.update_planet_buildings \
+                Pages.resources: self.update_planet_buildings \
                              if kwargs.get('building') else noc,
-                'fleet1': self.update_planet_fleet \
+                Pages.fleet: self.update_planet_fleet \
                           if kwargs.get('fleet') else noc,
-                'station': self.update_planet_stations \
+                Pages.station: self.update_planet_stations \
                            if kwargs.get('station') else noc,
         }
         for planet in self.empire:
@@ -184,9 +201,9 @@ class Interface:
             construction = getattr(planet, construction)
         if isinstance(construction, tuple(building.__class__
                                           for building in BUILDINGS.values())):
-            page = 'resources'
+            page = Pages.resources
         else:
-            page = 'station'
+            page = Pages.station
         self.go_to(planet, page, update=False)
         self.click(xpath=construction.css_dom)
         self.update_empire_overall()
@@ -199,17 +216,17 @@ class Interface:
                        % (planet.position))
             self.current_planet = planet
 
-        if page is not None and self.current_page != page:
+        if page is not None and self.current_page is not page:
             logger.debug('Going to page %s', page)
-            self.click(xpath="css=a[href=\"%s?page=%s\"]"
-                       % (self.server_url, page))
+            self.click(css="a[href=\"%s?page=%s\"]"
+                       % (self.server_url, page.value))
             self.current_page = page
 
         if update:
             self.update_planet_resources(planet)
-            if self.current_page == 'resources':
+            if self.current_page is Pages.resources:
                 self.update_planet_resources(planet)
-            elif self.current_page == 'fleet1':
+            elif self.current_page is Pages.fleet:
                 self.update_planet_fleet(planet)
         return self.current_planet, self.current_page
 
@@ -222,7 +239,7 @@ class Interface:
 
     def send_fleet(self, src, dst, mission, fleet,
             resources=Resources(), dtype='planet'):
-        self.go_to(src, 'fleet1')
+        self.go_to(src, Pages.fleet)
         assert mission in MISSIONS, \
                 'mission should be among %r' % MISSIONS.keys()
 
@@ -235,13 +252,13 @@ class Interface:
             sent_fleet.add(ships=ships)
             src.fleet.remove(ships=ships)
 
-        self.click(xpath="css=#continue > span")
+        self.click(css="#continue > span")
 
         self.driver.find_element_by_id("galaxy").send_keys(dst[0])
         self.driver.find_element_by_id("system").send_keys(dst[1])
         self.driver.find_element_by_id("position").send_keys(dst[2])
         self.click(xpath=MISSIONS_DST[dtype])
-        self.click(xpath="css=#continue > span")
+        self.click(css="#continue > span")
 
         self.click(xpath=MISSIONS[mission])
         for res_type, quantity in resources.movable:
@@ -249,7 +266,7 @@ class Interface:
         sent_fleet.arrival_time = self.get_date('arrivalTime')
         sent_fleet.return_time = self.get_date('returnTime')
 
-        self.click(xpath="css=#start > span")
+        self.click(css="#start > span")
         self.current_page = None
         self.update_planet_resources(src)
         return sent_fleet
