@@ -7,30 +7,31 @@ Outil en ligne de commande pour inscrire des actions
 from pyogame import tools, routines
 
 
-def main(factory, args):
-    factory.interface.login()
-    factory.interface.update_empire_overall()
-    factory.interface.crawl(building=True, fleet=True, station=True)
-    if args.rapatriate:
+def main(interface, option):
+    interface.login()
+    interface.update_empire_overall()
+    interface.crawl(building=True, fleet=True, station=True)
+    if option.rapatriate:
         routines.civil.rapatriate()
-    if args.construct:
+    if option.construct:
         routines.civil.in_place_empire_upgrade()
         routines.civil.resources_reception_and_construction()
         routines.civil.plan_construction()
-    if args.probes:
+    if option.probes:
         routines.guerrilla.check_neighborhood(
-                [args.area_start, args.area_end],
+                [option.area_start, option.area_end],
                 routines.guerrilla.SPY)
-    if args.recycle:
+    if option.recycle:
         routines.guerrilla.check_neighborhood(
-                [args.area_start, args.area_end],
+                [option.area_start, option.area_end],
                 routines.guerrilla.RECYCLE)
-    if not (args.rapatriate or args.construct or args.probes
-            or args.recycle or args.idles or args.build):
+    if not (option.rapatriate or option.construct or option.probes
+            or option.recycle or option.idles or option.build):
         routines.civil.in_place_empire_upgrade()
         routines.civil.resources_reception_and_construction()
         routines.civil.rapatriate()
         routines.civil.plan_construction()
+    interface.logout()
 
 
 if __name__ == "__main__":
@@ -63,7 +64,7 @@ if __name__ == "__main__":
             factory.empire.capital.add_construction_plan(construct_name, level)
 
     if not args.do_nothing:
-        main(factory, args)
+        main(factory.interface, args)
     factory.dump()
 
 # vim: set et sts=4 sw=4 tw=120:

@@ -70,6 +70,10 @@ class Interface:
         self.discover()
         self.update_empire_overall()
 
+    def logout(self):
+        self.click(css="a[href=\"%s?page=logout\"]" % self.server_url)
+        self.driver.close()
+
     def click(self, id_=None, name=None, xpath=None, css=None):
         if id_ is not None:
             elem = self.driver.find_element_by_id(id_)

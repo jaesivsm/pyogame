@@ -43,7 +43,6 @@ class Fleet(Collection):
             del self._ships[ships.ships_id]
 
     def for_moving(self, resources):
-        #FIXME dirty hack to count deuterium, highly wrong
         fleet, amount = Fleet(), resources.movable.total
         assert self, 'fleet is empty !'
         if self.capacity < amount:
@@ -51,7 +50,10 @@ class Fleet(Collection):
                          '%s', pretty_number(amount), self,
                                pretty_number(self.capacity))
             return self
-        cmp_func = lambda x,y: cmp(x.capacity, y.capacity)
+
+        def cmp_func(x, y):
+            return x.capacity > y.capacity
+
         for ships in sorted(self, cmp=cmp_func, reverse=True):
             if fleet.capacity > amount:
                 break
@@ -142,7 +144,8 @@ class Missions(Collection):
         self.missions[fleet.travel_id] = fleet
         return fleet.travel_id
 
-    def clean(self, awaited_travel=[]):
+    def clean(self, awaited_travel=None):
+        awaited_travel = awaited_travel or []
         to_dels = []
         for fleet in self.returned:
             if not fleet.travel_id in awaited_travel:
