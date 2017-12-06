@@ -106,7 +106,9 @@ class Interface:
             for building in BUILDINGS.values():
                 if building.page is not page:
                     continue
-                if building.position != pos + 1:
+                # page resources and station don't start at the same level
+                offset = 0 if page is Pages.station else 1
+                if building.position != pos + offset:
                     continue
                 building = getattr(planet, building.name)
                 building.level = int(ele.text_content().split()[-1])
