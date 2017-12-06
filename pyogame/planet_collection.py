@@ -15,12 +15,16 @@ class PlanetCollection(common.Collection):
         super().__init__(data)
 
     def add(self, planet):
-        key = '.'.join(map(str, planet.coords))
-        if key in self.data:
-            return self.data[key]
-        self.data[key] = planet
+        if planet.key in self.data:
+            return self.data[planet.key]
+        self.data[planet.key] = planet
         if self.capital_coords and self.capital_coords == planet.coords:
             planet.capital = True
+        return planet
+
+    def remove(self, planet):
+        if planet.key in self.data:
+            del self.data[planet.key]
         return planet
 
     @property

@@ -107,6 +107,7 @@ class Interface:
                 resources[res_type] = int(''.join(res))
             logger.debug('found %r on %s:%s',
                     resources, self.current_planet, self.current_page)
+            planet.resources = resources
         except Exception:
             logger.exception("ERROR: Couldn't update resources")
         return resources
@@ -128,10 +129,8 @@ class Interface:
     def update_planet_stations(self, planet):
         self._parse_constructions(Pages.station, planet, STATIONS)
 
-    def update_planet_fleet(self, planet=None, force=False):
+    def update_planet_fleet(self, planet):
         planet = planet if planet else self.current_planet
-        if not force and planet.fleet_updated:
-            return
         logger.info('updating fleet states on %s', planet)
         planet.fleet.clear()
         source = html.fromstring(self.driver.page_source)
@@ -158,26 +157,26 @@ class Interface:
         logger.debug('Getting list of colonized planets')
         source = html.fromstring(self.driver.page_source)
         planets_list_elem = source.xpath("//div[@id='planetList']")[0]
-        planets_data = []
+        existing = {}
         for position, elem in enumerate(planets_list_elem):
             name = elem.find_class('planet-name')[0].text.strip()
             coords = elem.find_class('planet-koords')[0].text.strip('[]')
             coords = [int(coord) for coord in coords.split(':')]
-            planets_data.append((name, coords, position + 1))
+            planet = Planet(name, coords, position + 1)
+            existing[planet.key] = planet
 
-        for name, coords, position in planets_data:
-            if empire.cond(coords=coords).first is None:
-                planet = Planet(name, coords, position)
+        for planet in existing.values():
+            if empire.cond(key=planet.key).first is None:
                 logger.warning('Adding %r to empire', planet)
                 empire.add(planet)
 
         to_remove = []
         for planet in empire:
-            if planet.coords not in [coords for _, coords, _ in planets_data]:
+            if planet.key not in existing:
                 to_remove.append(planet)
         for planet in to_remove:
             logger.warning('Removing %r of empire', planet)
-            empire.remove(planet)
+            empire.remove(planet.key)
 
         logger.debug('updating empire overall')
         source = html.fromstring(self.driver.page_source)
@@ -206,6 +205,7 @@ class Interface:
         self.go_to(planet, page, update=False)
         self.click(css=construction.css_dom)
         self.update_planet_resources(planet)
+        planet.idle = False
 
     def go_to(self, planet=None, page=None, update=True):
         if planet is not None and self.current_planet is not planet:

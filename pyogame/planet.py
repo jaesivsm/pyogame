@@ -39,7 +39,7 @@ class Planet:
             if new_plan == planned_construct.name:
                 planned_construct.level = level
                 return
-        for construction in BUILDINGS.values() + STATIONS.values():
+        for construction in chain(BUILDINGS.values(), STATIONS.values()):
             if new_plan == construction.name \
                     and getattr(self, construction.name).level < level:
                 self.construction_plans.append(construction.__class__(level))
