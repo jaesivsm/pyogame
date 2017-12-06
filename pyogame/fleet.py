@@ -12,11 +12,6 @@ logger = logging.getLogger(__name__)
 
 class Fleet(Collection):
 
-    def __init__(self):
-        self._ships = {}
-        self.clear = self._ships.clear
-        super(Fleet, self).__init__(self._ships)
-
     @property
     def capacity(self):
         return sum([ships.capacity for ships in self])
@@ -29,18 +24,18 @@ class Fleet(Collection):
         if ships is None:
             ships = Ships.load(ships_id=ships_id, **kwargs)
         if isinstance(ships, Ships) and ships.quantity:
-            if not ships.ships_id in self._ships:
-                self._ships[ships.ships_id] = ships.copy()
+            if not ships.ships_id in self.data:
+                self.data[ships.ships_id] = ships.copy()
             else:
-                self._ships[ships.ships_id].quantity += ships.quantity
+                self.data[ships.ships_id].quantity += ships.quantity
 
     def remove(self, ships_id=0, ships=None, **kwargs):
         if ships is None:
             ships = self.__class__.load(ships_id=ships_id, **kwargs)
         if ships.quantity:
-            self._ships[ships.ships_id].quantity -= ships.quantity
-        if self._ships[ships.ships_id].quantity <= 0:
-            del self._ships[ships.ships_id]
+            self.data[ships.ships_id].quantity -= ships.quantity
+        if self.data[ships.ships_id].quantity <= 0:
+            del self.data[ships.ships_id]
 
     def for_moving(self, resources):
         fleet, amount = Fleet(), resources.movable.total
@@ -86,7 +81,7 @@ class Fleet(Collection):
         return fleet
 
     def dump(self):
-        return {'ships': [ships.dump() for ships in self._ships.values()]}
+        return {'ships': [ships.dump() for ships in self.data.values()]}
 
     def __len__(self):
         return sum([ships.quantity for ships in self])
@@ -134,14 +129,10 @@ class FlyingFleet(Fleet):
 
 class Missions(Collection):
 
-    def __init__(self):
-        self.missions = {}
-        super(Missions, self).__init__(self.missions)
-
     def add(self, fleet=None, **kwargs):
         if fleet is None or not isinstance(fleet, Fleet):
             fleet = FlyingFleet(**kwargs)
-        self.missions[fleet.travel_id] = fleet
+        self.data[fleet.travel_id] = fleet
         return fleet.travel_id
 
     def clean(self, awaited_travel=None):
@@ -151,7 +142,7 @@ class Missions(Collection):
             if not fleet.travel_id in awaited_travel:
                 to_dels.append(fleet)
         for fleet in to_dels:
-            self.missions.pop(fleet.travel_id)
+            self.data.pop(fleet.travel_id)
 
     @property
     def arrived(self):

@@ -1,6 +1,5 @@
 import logging
 
-from pyogame.tools.factory import Factory
 from pyogame.routines.common import spy, recycle
 
 logger = logging.getLogger(__name__)
@@ -10,11 +9,10 @@ BOTH = 'BOTH'
 RECYCLE = 'RECYCLE'
 
 
-def check_neighborhood(area=[0, 20], mission=BOTH, planet=None):
-    interface = Factory().interface
-    if planet is None:
-        planet = Factory().empire.capital
-    galaxy, system_origin, position = planet.coords
+def check_neighborhood(interface, empire,
+                       area=None, mission=BOTH, planet=None):
+    area = area or [0, 20]
+    galaxy, system_origin, _ = planet.coords
 
     for distance in range(*area):
         for factor in (1, -1):
@@ -24,7 +22,8 @@ def check_neighborhood(area=[0, 20], mission=BOTH, planet=None):
             for row in interface.browse_galaxy(galaxy, system, planet):
                 if mission in (SPY, BOTH) and row.inactive \
                         and not (row.vacation or row.noob):
-                    spy(planet, row.coords)
+                    spy(interface, empire, planet, row.coords)
                 if mission in (RECYCLE, BOTH) \
                         and row.debris_content.total > 20000:
-                    recycle(planet, row.coords, row.debris_content)
+                    recycle(interface, empire,
+                            planet, row.coords, row.debris_content)

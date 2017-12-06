@@ -1,7 +1,6 @@
 from collections import defaultdict
 
 from pyogame.tools.resources import pretty_number
-from pyogame.tools.factory import Factory
 
 
 def pstr(value, is_title=False):
@@ -13,7 +12,7 @@ def pstr(value, is_title=False):
         return '+' if value else ''
     if isinstance(value, int):
         return pretty_number(value)
-    return value
+    return str(value)
 
 
 def get_attr(element, attrs):
@@ -38,7 +37,8 @@ def print_lines(iterable, *columns):
             set_max_len(column, get_attr(element, column))
 
     def add_to_line(value, space=' ', sep='|'):
-        return space + value + space * (lenghts[column] - len(value) + 1) + sep
+        return "%s%s%s" % (space, value,
+                space * (lenghts[column] - len(value) + 1) + sep)
     sep_line = '+'
     line = '|'
     for column in columns:
@@ -63,8 +63,8 @@ def _try_exit(exit_status):
     except NameError:
         pass  # not in a shell
 
-def print_overall_status():
-    print_lines(Factory().empire, 'name', 'key', ('cap', 'capital'),
+def print_overall_status(empire):
+    print_lines(empire, 'name', 'key', ('cap', 'capital'),
                 ('idle', 'is_idle'),
                 ('wait', 'is_waiting'), 'resources',
                 ('f m', 'is_metal_tank_full'),
@@ -73,8 +73,8 @@ def print_overall_status():
                 ('transport', 'fleet.capacity'))
     _try_exit(0)
 
-def print_to_construct():
-    print_lines(Factory().empire, 'name',
+def print_to_construct(empire):
+    print_lines(empire, 'name',
                 ('met', 'metal_mine.level'),
                 ('cry', 'crystal_mine.level'),
                 ('deut', 'deuterium_synthetizer.level'),
@@ -87,7 +87,6 @@ def print_to_construct():
                 ('to construct', 'to_construct.name'),
                 ('lvl', 'to_construct.level'),
                 ('cost', 'to_construct.cost'))
-
     _try_exit(0)
 
 def unknown_display(display):

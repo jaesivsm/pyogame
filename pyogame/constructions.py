@@ -82,7 +82,7 @@ class Tank(Constructions):
     power = 2
 
     @property
-    def capacity(self):  #FIXME fugly, couldn't find the true formula for that one
+    def capacity(self):  # fugly, couldn't find the true formula for that one
         return {0: 10, 1: 20, 2: 40, 3: 75, 4: 140, 5: 255, 6: 470, 7: 865,
                 8: 1590, 9: 2920, 10: 5355, 11: 9820, 12: 18005, 13: 33005,
                 14: 60510, 15: 110925, 16: 203350, 17: 372785, 18: 683385,

@@ -3,7 +3,6 @@ import logging
 from argparse import ArgumentParser
 
 from .const import LOGFILE
-from .factory import Factory
 
 
 def parse_args():
@@ -19,7 +18,7 @@ def parse_args():
             action='count', default=0)
     parser.add_argument('-l', '--log', dest='log',
             action='store_true', default=False)
-    # rapatriate the ressources to the capital
+    # rapatriate the resources to the capital
     parser.add_argument('-r', '--rapatriate', dest='rapatriate',
             action='store_true', default=False)
     parser.add_argument('-c', '--construct', dest='construct',
@@ -50,10 +49,7 @@ def parse_args():
 
 
 def set_logger(logfile=None, username=None, loglevel=None):
-
     "Will set a global logging configuration for muleo."
-    if loglevel is None:
-        loglevel = Factory().conf.get('loglevel')
 
     logger = logging.getLogger('pyogame')
     log_format = '%(levelname)-8s - %(message)s'

@@ -1,17 +1,15 @@
 # -*- coding: utf-8 -*-
 import logging
 
-from pyogame.tools.factory import Factory
 from pyogame.routines.common import transport
 
 logger = logging.getLogger(__name__)
 
 
-def in_place_empire_upgrade():
+def in_place_empire_upgrade(interface, empire, construct_on_capital=True):
     logger.debug('### In place empire upgrade')
-    factory = Factory()
-    for planet in factory.empire.idles:
-        if planet.capital and not factory.conf.get('construct_on_capital', True):
+    for planet in empire.idles:
+        if planet.capital and not construct_on_capital:
             continue
         logger.debug('%r > %r = %r', planet.resources, planet.to_construct.cost,
                      planet.resources >= planet.to_construct.cost)
@@ -19,12 +17,11 @@ def in_place_empire_upgrade():
             logger.warning("Resources are available on %s to construct %s "
                            "(lvl %d)", planet, planet.to_construct.name,
                            planet.to_construct.level + 1)
-            factory.interface.construct(planet.to_construct, planet)
+            interface.construct(planet.to_construct, planet)
 
 
-def rapatriate(destination=None):
+def rapatriate(interface, empire, destination=None):
     logger.debug('### rapatriate')
-    empire = Factory().empire
     if not destination and empire.capital:
         destination = empire.capital
     assert destination, "Empire has no capital " \
@@ -43,15 +40,14 @@ def rapatriate(destination=None):
             logger.info('not enough resources on %s to bother repatriating',
                         source)
             continue
-        transport(source, destination, all_ships=True)
+        transport(interface, empire, source, destination, all_ships=True)
 
 
-def plan_construction():
+def plan_construction(interface, empire, construct_on_capital=True):
     logger.debug('### plan construction')
-    empire = Factory().empire
     source = empire.capital
     while True:
-        planet = empire.idles.cheapest
+        planet = empire.idles.cheapest(construct_on_capital)
         if not planet:
             logger.info("No eligible planet for construction")
             break
@@ -60,7 +56,7 @@ def plan_construction():
                     planet.to_construct, planet, cost.movable)
 
         if source.resources.movable < cost.movable:
-            logger.info("Not enough ressources on %s (having %s)",
+            logger.info("Not enough resources on %s (having %s)",
                         source, source.resources.movable)
             break
         if source.fleet.capacity < cost.movable.total:
@@ -70,15 +66,15 @@ def plan_construction():
 
         logger.warning('Sending resources to construct %s on %s',
                        planet.to_construct, planet)
-        travel_id = transport(source, planet, resources=cost)
+        travel_id = transport(interface, empire,
+                              source, planet, resources=cost)
 
         planet.waiting_for[travel_id] = planet.to_construct.name
 
 
-def resources_reception_and_construction():
+def resources_reception_and_construction(interface, empire):
     logger.debug('### Resources reception and construction')
     waited_constructs = {}
-    empire = Factory().empire
 
     for fleet in empire.missions.arrived:
         if not fleet.travel_id in empire.waiting_for:
@@ -107,7 +103,7 @@ def resources_reception_and_construction():
             if waited_constr == waited_travel:
                 logger.warning("All fleet arrived to construct %s on %s, "
                                "launching construction.", construct, planet)
-                Factory().interface.construct(construct, planet)
+                interface.construct(construct, planet)
                 for travel_id, c in planet.waiting_for.items():
                     if c == construct:
                         del planet.waiting_for[travel_id]

@@ -14,17 +14,18 @@ class FilterFailed(Exception):
     pass
 
 
-class Collection(object):
+class Collection:
 
-    def __init__(self, data_dict):
-        self._data_dict = data_dict
-        self._filters = {}
+    def __init__(self, data=None):
+        self.data = data or {}
+        self.clear = self.data.clear
+        self.filters = {}
 
     def __iter__(self):
-        for item in self._data_dict.values():
+        for item in self.data.values():
             try:
-                for key in self._filters:
-                    if getattr(item, key) == self._filters[key]:
+                for key in self.filters:
+                    if getattr(item, key) == self.filters[key]:
                         continue
                     raise FilterFailed()
                 yield item
@@ -32,19 +33,18 @@ class Collection(object):
                 pass
 
     def cond(self, *args, **kwargs):
-        coll = self.__class__()
-        coll._data_dict = self._data_dict
-        coll._filters.update(self._filters)
+        coll = self.__class__(self.data)
+        coll.filters.update(self.filters)
         for arg in args:
             if isinstance(arg, dict):
-                coll._filters.update(arg)
-        coll._filters.update(kwargs)
+                coll.filters.update(arg)
+        coll.filters.update(kwargs)
         return coll
 
     def copy(self):
         coll = self.__class__()
-        coll._data_dict.update(self._data_dict)
-        coll._filters.update(self._filters)
+        coll.data.update(self.data)
+        coll.filters.update(self.filters)
         return coll
 
     @property

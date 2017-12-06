@@ -4,6 +4,7 @@ import time
 import logging
 from datetime import datetime
 from enum import Enum
+from urllib.parse import urlparse, parse_qs
 
 from lxml import html
 from selenium import webdriver
@@ -37,16 +38,29 @@ class Pages(Enum):
 class Interface:
 
     def __init__(self, user, password, univers, lang='fr', **kwargs):
-        self.driver = webdriver.Firefox()
-        self.driver.implicitly_wait(DEFAULT_WAIT_TIME)
+        self._driver = None
         self.url = "http://%s.ogame.gameforge.com/" % lang
-        self.server_url = None
 
         self.current_planet = None
-        self.current_page = Pages.overview
         self.user, self.password, self.univers = user, password, univers
-        from pyogame.tools.factory import Factory
-        self.empire = Factory().empire
+
+    @property
+    def driver(self):
+        if self._driver is None:
+            self._driver = webdriver.Firefox()
+            self._driver.implicitly_wait(DEFAULT_WAIT_TIME)
+        return self._driver
+
+    @property
+    def server_url(self):
+        return self.driver.current_url.split('?')[0]
+
+    @property
+    def current_page(self):
+        query = urlparse(self.driver.current_url).query
+        page = parse_qs(query).get('page')
+        if page:
+            return Pages(page[0])
 
     def __split_text(self, xpath, split_on='\n'):
         for txt in self.driver.find_element_by_xpath(xpath)\
@@ -66,9 +80,6 @@ class Interface:
         self.click(id_='loginSubmit')
 
         time.sleep(DEFAULT_JS_SLEEP)
-        self.server_url = self.driver.current_url.split('?')[0]
-        self.discover()
-        self.update_empire_overall()
 
     def logout(self):
         self.click(css="a[href=\"%s?page=logout\"]" % self.server_url)
@@ -88,21 +99,21 @@ class Interface:
         elem.click()
         return elem
 
-    def update_planet_resources(self, planet=None):
-        planet, _ = self.go_to(planet, update=False)
+    def update_planet_resources(self, planet):
+        resources = Resources()
         try:
             for res_type in RES_TYPES:
                 res = self.__split_text("//li[@id='%s_box']" % res_type, '.')
-                planet.resources[res_type] = int(''.join(res))
-            logger.info('updating resources on planet %s (%s)',
-                        planet, planet.resources)
+                resources[res_type] = int(''.join(res))
+            logger.debug('found %r on %s:%s',
+                    resources, self.current_planet, self.current_page)
         except Exception:
             logger.exception("ERROR: Couldn't update resources")
+        return resources
 
     def _parse_constructions(self, page, planet=None, constructions=None):
         constructions = constructions or []
         logger.debug('### updating %s states for %s', page, planet)
-        planet, page = self.go_to(planet, page, update=False)
         source = html.fromstring(self.driver.page_source)
         for pos, ele in enumerate(source.xpath("//span[@class='level']")):
             try:
@@ -111,23 +122,16 @@ class Interface:
                 continue
             building.level = int(ele.text_content().split()[-1])
 
-    def update_planet_buildings(self, planet=None, force=False):
-        planet = planet if planet else self.current_planet
-        if force or not planet.building_updated:
-            self._parse_constructions(Pages.resources, planet, BUILDINGS)
-            planet.building_updated = True
+    def update_planet_buildings(self, planet):
+        self._parse_constructions(Pages.resources, planet, BUILDINGS)
 
-    def update_planet_stations(self, planet=None, force=False):
-        planet = planet if planet else self.current_planet
-        if force or not planet.station_updated:
-            self._parse_constructions(Pages.station, planet, STATIONS)
-            planet.station_updated = True
+    def update_planet_stations(self, planet):
+        self._parse_constructions(Pages.station, planet, STATIONS)
 
     def update_planet_fleet(self, planet=None, force=False):
         planet = planet if planet else self.current_planet
         if not force and planet.fleet_updated:
             return
-        planet, _ = self.go_to(planet, Pages.fleet, update=False)
         logger.info('updating fleet states on %s', planet)
         planet.fleet.clear()
         source = html.fromstring(self.driver.page_source)
@@ -150,52 +154,43 @@ class Interface:
         logger.debug('%s got fleet %s', planet, planet.fleet)
         planet.fleet_updated = True
 
-    def update_empire_overall(self):
-        logger.info('updating empire overall')
-        source = html.fromstring(self.driver.page_source)
-        planets_list = source.xpath("//div[@id='planetList']")[0]
-        for position, elem in enumerate(planets_list):
-            self.empire.planets[position + 1].idle = False \
-                    if elem.find_class('icon_wrench') else True
-        self.empire.missions.clean(self.empire.waiting_for)
-
-    def discover(self):
-        if self.empire.loaded:
-            return
+    def update_empire_state(self, empire):
         logger.debug('Getting list of colonized planets')
         source = html.fromstring(self.driver.page_source)
-        try:
-            planets_list = source.xpath("//div[@id='planetList']")[0]
-        except IndexError:  # FIXME ugly, shouldn't be here, invoking exit bad
-            logger.error("Couldn't get the planet list. "
-                         "Is your login page the right one? See configuration")
-            exit(1)
-        for position, elem in enumerate(planets_list):
+        planets_list_elem = source.xpath("//div[@id='planetList']")[0]
+        planets_data = []
+        for position, elem in enumerate(planets_list_elem):
             name = elem.find_class('planet-name')[0].text.strip()
             coords = elem.find_class('planet-koords')[0].text.strip('[]')
             coords = [int(coord) for coord in coords.split(':')]
-            self.empire.add(Planet(name, coords, position + 1))
-        self.empire.loaded = True
+            planets_data.append((name, coords, position + 1))
 
-    def crawl(self, resources=True, **kwargs):
-        logger.info("Will crawl all empire for %s",
-                    ', '.join([key for key in kwargs if kwargs[key] is True]))
-        noc = lambda x: None
-        update_funcs = {
-                Pages.resources: self.update_planet_buildings \
-                             if kwargs.get('building') else noc,
-                Pages.fleet: self.update_planet_fleet \
-                          if kwargs.get('fleet') else noc,
-                Pages.station: self.update_planet_stations \
-                           if kwargs.get('station') else noc,
-        }
-        for planet in self.empire:
-            if self.current_page in update_funcs:
-                update_funcs[self.current_page](planet)
-            for func in update_funcs.values():
-                func(planet)
-            if resources:
-                self.update_planet_resources(planet)
+        for name, coords, position in planets_data:
+            if empire.cond(coords=coords).first is None:
+                planet = Planet(name, coords, position)
+                logger.warning('Adding %r to empire', planet)
+                empire.add(planet)
+
+        to_remove = []
+        for planet in empire:
+            if planet.coords not in [coords for _, coords, _ in planets_data]:
+                to_remove.append(planet)
+        for planet in to_remove:
+            logger.warning('Removing %r of empire', planet)
+            empire.remove(planet)
+
+        logger.debug('updating empire overall')
+        source = html.fromstring(self.driver.page_source)
+        planets_list = source.xpath("//div[@id='planetList']")[0]
+        for position, elem in enumerate(planets_list):
+            empire.cond(position=position + 1).first.idle = not bool(
+                    elem.find_class('icon_wrench'))
+        empire.missions.clean(empire.waiting_for)
+
+    def crawl(self, planets, **kwargs):
+        for planet in planets:
+            for page in Pages.resources, Pages.station, Pages.fleet:
+                self.go_to(planet=planet, page=page)
 
     def construct(self, construction, planet=None):
         planet = planet if planet is not None else self.current_planet
@@ -210,7 +205,6 @@ class Interface:
             page = Pages.station
         self.go_to(planet, page, update=False)
         self.click(css=construction.css_dom)
-        self.update_empire_overall()
         self.update_planet_resources(planet)
 
     def go_to(self, planet=None, page=None, update=True):
@@ -224,14 +218,15 @@ class Interface:
             logger.debug('Going to page %s', page)
             self.click(css="a[href=\"%s?page=%s\"]"
                        % (self.server_url, page.value))
-            self.current_page = page
 
-        if update:
-            self.update_planet_resources(planet)
+        if self.current_planet:
+            self.update_planet_resources(self.current_planet)
             if self.current_page is Pages.resources:
-                self.update_planet_resources(planet)
+                self.update_planet_buildings(self.current_planet)
+            elif self.current_page is Pages.station:
+                self.update_planet_stations(self.current_planet)
             elif self.current_page is Pages.fleet:
-                self.update_planet_fleet(planet)
+                self.update_planet_fleet(self.current_planet)
         return self.current_planet, self.current_page
 
     def get_date(self, css_id):
@@ -271,12 +266,11 @@ class Interface:
         sent_fleet.return_time = self.get_date('returnTime')
 
         self.click(css="#start > span")
-        self.current_page = None
         self.update_planet_resources(src)
         return sent_fleet
 
     def browse_galaxy(self, galaxy, system, planet=None):
-        self.go_to(planet, 'galaxy')
+        self.go_to(planet, Pages.galaxy)
         logger.debug('Browsing system %r on galaxy %r', system, galaxy)
         self.driver.find_element_by_id('galaxy_input').send_keys(galaxy)
         self.driver.find_element_by_id("system_input").send_keys(system)

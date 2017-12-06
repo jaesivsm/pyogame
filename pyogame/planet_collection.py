@@ -9,16 +9,19 @@ logger = logging.getLogger(__name__)
 
 class PlanetCollection(common.Collection):
 
-    def __init__(self, capital=None, **kwargs):
+    def __init__(self, data, capital=None, **kwargs):
         self.capital_coords = capital
-        self.planets = {}
         self.missions = Missions()
-        super(PlanetCollection, self).__init__(self.planets)
+        super().__init__(data)
 
     def add(self, planet):
-        self.planets[planet.position] = planet
+        key = '.'.join(map(str, planet.coords))
+        if key in self.data:
+            return self.data[key]
+        self.data[key] = planet
         if self.capital_coords and self.capital_coords == planet.coords:
             planet.capital = True
+        return planet
 
     @property
     def colonies(self):
@@ -63,15 +66,12 @@ class PlanetCollection(common.Collection):
             waiting_for.update(planet.waiting_for)
         return waiting_for
 
-    @property
-    def cheapest(self):
+    def cheapest(self, construct_on_capital=True):
         "return the planet with the cheapest construction of any type"
         cheapest = None
         for planet in self:
-            if planet.capital:
-                from pyogame.tools.factory import Factory
-                if not Factory().conf.get('construct_on_capital', True):
-                    continue
+            if not construct_on_capital and planet.capital:
+                continue
             if not cheapest:
                 cheapest = planet
             elif planet.to_construct.cost.movable.total \
