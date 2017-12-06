@@ -50,7 +50,7 @@ if __name__ == "__main__":
         else:
             tools.ui.unknown_display(args.ui)
 
-    if args.build:
+    elif args.build:
         plan = args.build.split('-')
         construct_name, level, planet_key = None, None, None
         if len(plan) == 2:
@@ -65,7 +65,7 @@ if __name__ == "__main__":
         elif construct_name is not None and level is not None:
             context.empire.capital.add_construction_plan(construct_name, level)
 
-    if not args.do_nothing:
+    elif not args.do_nothing:
         main(context, args)
     context.dump()
 

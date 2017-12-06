@@ -1,9 +1,7 @@
 import logging
-from itertools import chain
-
 from pyogame.tools import Resources
 from pyogame.fleet import Fleet
-from pyogame.constructions import BUILDINGS, STATIONS
+from pyogame.constructions import BUILDINGS
 from pyogame.tools.common import coords_to_key
 
 logger = logging.getLogger(__name__)
@@ -24,26 +22,56 @@ class Planet:
         self.station_updated = False
         self.building_updated = False
         self.fleet_updated = False
+        self.metal_mine = None
+        self.crystal_mine = None
+        self.deuterium_synthetizer = None
+        self.solar_plant = None
+        self.metal_tank = None
+        self.crystal_tank = None
+        self.deuterium_tank = None
+        self.robot_factory = None
+        self.nanite_factory = None
 
         self.construction_plans = []
-        for construction in chain(BUILDINGS.values(), STATIONS.values()):
+        for construction in BUILDINGS.values():
             setattr(self, construction.name,
                     construction.__class__(kwargs.get(construction.name, 0)))
 
-        for planned_construct, lvl \
-                in kwargs.get('construction_plans', {}).items():
-            self.add_construction_plan(planned_construct, lvl)
+        for plan in kwargs.get('construction_plans', []):
+            self.add_construction_plan(plan[0], plan[1])
 
-    def add_construction_plan(self, new_plan, level):
-        for planned_construct in self.construction_plans:
-            if new_plan == planned_construct.name:
-                planned_construct.level = level
+    def add_construction_plan(self, new_plan, level=None):
+        # checking type
+        new = BUILDINGS.get(new_plan)
+        if new is None:
+            logger.error("Can't make out what %r is", new_plan)
+            return
+        current = getattr(self, new_plan)
+
+        # checking level against current
+        if level is None:
+            level = current.level + 1
+        new = new.__class__(level)
+        if new.level <= current.level:
+            logger.error("%r already have %r can't construct %r",
+                         self, current, new)
+            return
+
+        # checking level against existing plan
+        for existing_plan in self.construction_plans:
+            if new.name == existing_plan and new.level <= existing_plan.level:
+                logger.error("%r already have %r planned for construction, "
+                        "can't construct %r", self, existing_plan, new)
                 return
-        for construction in chain(BUILDINGS.values(), STATIONS.values()):
-            if new_plan == construction.name \
-                    and getattr(self, construction.name).level < level:
-                self.construction_plans.append(construction.__class__(level))
-                return
+
+        self.construction_plans.append(new)
+
+    def remove_construction_plan(self, build):
+        to_remove = [to_build for to_build in self.construction_plans
+                     if to_build.name == build.name
+                     and to_build.level <= build.level]
+        for tr in to_remove:
+            self.construction_plans.remove(tr)
 
     @property
     def key(self):
@@ -78,18 +106,19 @@ class Planet:
                 / (2500. * (float(self.robot_factory.level) + 1.)
                 * pow(2., float(self.nanite_factory.level))))
 
+    def _get_next_out_of_plans(self):
+        if not self.construction_plans:
+            return None
+        for plan in self.construction_plans:
+            current = getattr(self, plan.name)
+            return current.__class__(current.level + 1)
+
     @property
     def to_construct(self):
         # Handling construction list
-        if self.construction_plans:
-            to_construct = None
-            for plan in self.construction_plans:
-                construction = getattr(self, plan.name)
-                if construction.level < plan.level and (not to_construct
-                        or to_construct.cost.total > construction.cost.total):
-                    to_construct = construction
-            if to_construct is not None:
-                return to_construct
+        to_construct = self._get_next_out_of_plans()
+        if to_construct:
+            return to_construct
 
         to_construct = self.metal_mine
         if self.deuterium_synthetizer.level < self.metal_mine.level - 7:
@@ -139,12 +168,11 @@ class Planet:
                 'capital': self.capital,
                 'fleet': self.fleet.dump(),
                 'resources': self.resources.dump(),
-                'construction_plans': {
-                    construction.name: construction.level
-                    for construction in self.construction_plans},
+                'construction_plans': [[cons.name, cons.level]
+                    for cons in self.construction_plans],
         }
 
-        for constru in chain(BUILDINGS.values(), STATIONS.values()):
+        for constru in BUILDINGS.values():
             dump[constru.name] = getattr(self, constru.name).level
         return dump
 

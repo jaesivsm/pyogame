@@ -3,7 +3,6 @@ import re
 import time
 import logging
 from datetime import datetime
-from enum import Enum
 from urllib.parse import urlparse, parse_qs
 
 from lxml import html
@@ -13,26 +12,14 @@ from selenium.webdriver.support.ui import Select
 
 from pyogame.planet import Planet
 from pyogame.fleet import FlyingFleet
-from pyogame.constructions import BUILDINGS, STATIONS, Constructions
-from pyogame.tools.const import MISSIONS, MISSIONS_DST
+from pyogame.constructions import BUILDINGS
+from pyogame.tools.const import MISSIONS, MISSIONS_DST, Pages
 from pyogame.tools.resources import RES_TYPES, Resources
 from pyogame.tools.common import GalaxyRow
 
 logger = logging.getLogger(__name__)
 DEFAULT_WAIT_TIME = 10  # seconds
 DEFAULT_JS_SLEEP = 1
-
-
-class Pages(Enum):
-    overview = 'overview'
-    resources = 'resources'
-    station = 'station'
-    research = 'research'
-    shipyard = 'shipyard'
-    defense = 'defense'
-    fleet = 'fleet1'
-    movement = 'movement'
-    galaxy = 'galaxy'
 
 
 class Interface:
@@ -112,22 +99,17 @@ class Interface:
             logger.exception("ERROR: Couldn't update resources")
         return resources
 
-    def _parse_constructions(self, page, planet=None, constructions=None):
-        constructions = constructions or []
+    def update_buildings(self, page, planet=None):
         logger.debug('### updating %s states for %s', page, planet)
         source = html.fromstring(self.driver.page_source)
         for pos, ele in enumerate(source.xpath("//span[@class='level']")):
-            try:
-                building = getattr(planet, constructions[pos + 1].name)
-            except KeyError:
-                continue
-            building.level = int(ele.text_content().split()[-1])
-
-    def update_planet_buildings(self, planet):
-        self._parse_constructions(Pages.resources, planet, BUILDINGS)
-
-    def update_planet_stations(self, planet):
-        self._parse_constructions(Pages.station, planet, STATIONS)
+            for building in BUILDINGS.values():
+                if building.page is not page:
+                    continue
+                if building.position != pos + 1:
+                    continue
+                building = getattr(planet, building.name)
+                building.level = int(ele.text_content().split()[-1])
 
     def update_planet_fleet(self, planet):
         planet = planet if planet else self.current_planet
@@ -191,21 +173,13 @@ class Interface:
             for page in Pages.resources, Pages.station, Pages.fleet:
                 self.go_to(planet=planet, page=page)
 
-    def construct(self, construction, planet=None):
+    def construct(self, construct, planet=None):
         planet = planet if planet is not None else self.current_planet
-        if not isinstance(construction, Constructions):
-            assert hasattr(planet, construction), \
-                    '%s has not %r' % (planet, construction)
-            construction = getattr(planet, construction)
-        if isinstance(construction, tuple(building.__class__
-                                          for building in BUILDINGS.values())):
-            page = Pages.resources
-        else:
-            page = Pages.station
-        self.go_to(planet, page, update=False)
-        self.click(css=construction.css_dom)
+        self.go_to(planet, construct.page, update=False)
+        self.click(css=construct.css_dom)
         self.update_planet_resources(planet)
         planet.idle = False
+        planet.remove_construction_plan(construct)
 
     def go_to(self, planet=None, page=None, update=True):
         if planet is not None and self.current_planet is not planet:
@@ -221,10 +195,8 @@ class Interface:
 
         if self.current_planet:
             self.update_planet_resources(self.current_planet)
-            if self.current_page is Pages.resources:
-                self.update_planet_buildings(self.current_planet)
-            elif self.current_page is Pages.station:
-                self.update_planet_stations(self.current_planet)
+            if self.current_page in {Pages.resources, Pages.station}:
+                self.update_buildings(self.current_page, self.current_planet)
             elif self.current_page is Pages.fleet:
                 self.update_planet_fleet(self.current_planet)
         return self.current_planet, self.current_page

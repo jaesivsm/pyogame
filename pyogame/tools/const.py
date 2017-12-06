@@ -1,4 +1,6 @@
 import os
+from enum import Enum
+
 
 CONF_PATH = os.path.abspath(os.path.expanduser('conf.json'))
 LOGFILE = os.path.abspath(os.path.expanduser('~/ogame.log'))
@@ -16,3 +18,14 @@ MISSIONS_DST = {
         'moon': 'mbutton',
         'debris': 'dbutton',
 }
+
+class Pages(Enum):
+    overview = 'overview'
+    resources = 'resources'
+    station = 'station'
+    research = 'research'
+    shipyard = 'shipyard'
+    defense = 'defense'
+    fleet = 'fleet1'
+    movement = 'movement'
+    galaxy = 'galaxy'

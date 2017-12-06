@@ -1,6 +1,7 @@
 import re
 import logging
 
+from pyogame.tools.const import Pages
 from pyogame.tools.resources import Resources
 
 logger = logging.getLogger(__name__)
@@ -14,6 +15,7 @@ class Constructions:
     energy_factor = 0
     cmp_factor = 1
     position = 0
+    page = None
 
     def __init__(self, level=0):
         self.level = level
@@ -54,6 +56,7 @@ class MetalMine(Constructions):
     base_crystal_cost = 15
     position = 1
     energy_factor = 10
+    page = Pages.resources
 
 
 class CrystalMine(Constructions):
@@ -62,6 +65,7 @@ class CrystalMine(Constructions):
     power = 1.6
     position = 2
     energy_factor = 10
+    page = Pages.resources
 
 
 class DeuteriumSynthetizer(Constructions):
@@ -69,17 +73,20 @@ class DeuteriumSynthetizer(Constructions):
     base_crystal_cost = 75
     energy_factor = 20
     position = 3
+    page = Pages.resources
 
 
 class SolarPlant(Constructions):
     base_metal_cost = 75
     base_crystal_cost = 30
     position = 4
+    page = Pages.resources
 
 
 class Tank(Constructions):
     base_metal_cost = 1000
     power = 2
+    page = Pages.resources
 
     @property
     def capacity(self):  # fugly, couldn't find the true formula for that one
@@ -112,6 +119,7 @@ class RobotFactory(Constructions):
     power = 2
     energy_factor = 0
     position = 0
+    page = Pages.station
 
 
 class Laboratory(Constructions):
@@ -121,6 +129,7 @@ class Laboratory(Constructions):
     power = 2
     energy_factor = 0
     position = 2
+    page = Pages.station
 
 
 class NaniteFactory(Constructions):
@@ -130,19 +139,18 @@ class NaniteFactory(Constructions):
     power = 2
     energy_factor = 0
     position = 5
+    page = Pages.station
 
 
-BUILDINGS = {
-        1: MetalMine(),
-        2: CrystalMine(),
-        3: DeuteriumSynthetizer(),
-        4: SolarPlant(),
-        7: MetalTank(),
-        8: CrystalTank(),
-        9: DeuteriumTank(),
-}
-STATIONS = {
-        1: RobotFactory(),
-        3: Laboratory(),
-        6: NaniteFactory(),
-}
+BUILDINGS = {obj.name: obj for obj in (
+        MetalMine(),
+        CrystalMine(),
+        DeuteriumSynthetizer(),
+        SolarPlant(),
+        MetalTank(),
+        CrystalTank(),
+        DeuteriumTank(),
+        RobotFactory(),
+        Laboratory(),
+        NaniteFactory(),
+)}
