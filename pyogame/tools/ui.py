@@ -57,12 +57,6 @@ def print_lines(iterable, *columns):
         print(line)
     print(sep_line)
 
-def _try_exit(exit_status):
-    try:
-        exit(exit_status)
-    except NameError:
-        pass  # not in a shell
-
 def print_overall_status(empire):
     print_lines(empire, 'name', 'key', ('cap', 'capital'),
                 ('idle', 'is_idle'),
@@ -71,7 +65,6 @@ def print_overall_status(empire):
                 ('f c', 'is_crystal_tank_full'),
                 ('f d', 'is_deuterium_tank_full'),
                 ('transport', 'fleet.capacity'))
-    _try_exit(0)
 
 def print_to_construct(empire):
     print_lines(empire, 'name',
@@ -83,12 +76,11 @@ def print_to_construct(empire):
                 ('t c', 'crystal_tank.level'),
                 ('t d', 'deuterium_tank.level'),
                 ('rob', 'robot_factory.level'),
+                ('shi', 'shipyard.level'),
                 ('lab', 'laboratory.level'),
                 ('to construct', 'to_construct.name'),
                 ('lvl', 'to_construct.level'),
                 ('cost', 'to_construct.cost'))
-    _try_exit(0)
 
 def unknown_display(display):
     print("Unknown display: %r" % display)
-    _try_exit(1)

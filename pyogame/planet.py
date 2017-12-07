@@ -40,6 +40,8 @@ class Planet:
         for plan in kwargs.get('construction_plans', []):
             self.add_construction_plan(plan[0], plan[1])
 
+        self.remove_old_plans()
+
     def add_construction_plan(self, new_plan, level=None):
         # checking type
         new = BUILDINGS.get(new_plan)
@@ -66,12 +68,11 @@ class Planet:
 
         self.construction_plans.append(new)
 
-    def remove_construction_plan(self, build):
-        to_remove = [to_build for to_build in self.construction_plans
-                     if to_build.name == build.name
-                     and to_build.level <= build.level]
-        for tr in to_remove:
-            self.construction_plans.remove(tr)
+    def remove_old_plans(self):
+        to_remove = [plan for plan in self.construction_plans
+                     if plan.level <= getattr(self, plan.name).level]
+        for plan in to_remove:
+            self.construction_plans.remove(plan)
 
     @property
     def key(self):

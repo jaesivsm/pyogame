@@ -181,7 +181,7 @@ class Interface:
         self.click(css=construct.css_dom)
         self.update_planet_resources(planet)
         planet.idle = False
-        planet.remove_construction_plan(construct)
+        planet.remove_old_plans()
 
     def go_to(self, planet=None, page=None, update=True):
         if planet is not None and self.current_planet is not planet:

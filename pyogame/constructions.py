@@ -122,6 +122,11 @@ class RobotFactory(Constructions):
     page = Pages.station
 
 
+class Shipyard(Constructions):
+    position = 1
+    page = Pages.station
+
+
 class Laboratory(Constructions):
     base_metal_cost = 200
     base_crystal_cost = 400
@@ -151,6 +156,7 @@ BUILDINGS = {obj.name: obj for obj in (
         CrystalTank(),
         DeuteriumTank(),
         RobotFactory(),
+        Shipyard(),
         Laboratory(),
         NaniteFactory(),
 )}
