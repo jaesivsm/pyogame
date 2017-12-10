@@ -4,6 +4,7 @@
 Outil en ligne de commande pour inscrire des actions
 à exécuter ou pour les exécuter directement.
 """
+import time
 from pyogame import tools, routines
 
 
@@ -67,6 +68,13 @@ if __name__ == "__main__":
 
     elif not args.do_nothing:
         main(context, args)
+    else:
+        try:
+            context.interface.login()
+            context.interface.update_empire_state(context.empire)
+            time.sleep(600)
+        except KeyboardInterrupt:
+            pass
     context.dump()
 
 # vim: set et sts=4 sw=4 tw=120:
