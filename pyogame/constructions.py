@@ -16,6 +16,7 @@ class Constructions:
     cmp_factor = 1
     position = 0
     page = None
+    requirements = None
 
     def __init__(self, level=0):
         self.level = level
@@ -42,7 +43,7 @@ class Constructions:
         return Resources(metal=self._cost('metal'),
                 crystal=self._cost('crystal'),
                 deuterium=self._cost('deuterium'),
-                energy=self._energy(self.level+1) - self._energy(self.level))
+                energy=self._energy(self.level + 1) - self._energy(self.level))
 
     def __repr__(self):
         return "<%s(%d)>" % (self.__class__.__name__, self.level)
@@ -125,6 +126,7 @@ class RobotFactory(Constructions):
 class Shipyard(Constructions):
     position = 1
     page = Pages.station
+    requirements = [RobotFactory(2)]
 
 
 class Laboratory(Constructions):
@@ -141,6 +143,7 @@ class NaniteFactory(Constructions):
     base_metal_cost = 1000000
     base_crystal_cost = 500000
     base_deuterium_cost = 100000
+    requirements = [RobotFactory(10)]
     power = 2
     energy_factor = 0
     position = 5

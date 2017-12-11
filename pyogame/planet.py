@@ -7,6 +7,10 @@ from pyogame.tools.common import coords_to_key
 logger = logging.getLogger(__name__)
 
 
+def cheapest(buildings):
+    return sorted(buildings, key=lambda x: x.cost, reverse=True)[0]
+
+
 class Planet:
 
     def __init__(self, name, coords, position, **kwargs):
@@ -110,16 +114,27 @@ class Planet:
     def _get_next_out_of_plans(self):
         if not self.construction_plans:
             return None
-        for plan in self.construction_plans:
-            current = getattr(self, plan.name)
-            return current.__class__(current.level + 1)
+        return cheapest(self.requirements_for(plan)
+                        for plan in self.construction_plans)
+
+    def requirements_for(self, building):
+        if building.requirements:
+            eligible_reqs = [self.requirements_for(req)
+                             for req in building.requirements
+                             if req.level > getattr(self, req.name).level]
+            if eligible_reqs:
+                return cheapest(eligible_reqs)
+        if building.level > getattr(self, building.name).level + 1:
+            return self.requirements_for(
+                    building.__class__(building.level - 1))
+        return building
 
     @property
     def to_construct(self):
         # Handling construction list
         to_construct = self._get_next_out_of_plans()
         if to_construct:
-            return to_construct
+            return self.requirements_for(to_construct)
 
         to_construct = self.metal_mine
         if self.deuterium_synthetizer.level < self.metal_mine.level - 7:
@@ -129,12 +144,6 @@ class Planet:
         # more or less 5%
         if to_construct.cost.energy * .95 > self.resources.energy:
             to_construct = self.solar_plant
-        #if self.time_to_construct(to_construct.cost) \
-        #        / float(to_construct.level + 1) > 2:  # Fixed by experiment
-        #    if self.robot_factory.level < 10:
-        #        to_construct = self.robot_factory
-        #    else:
-        #        to_construct = self.nanite_factory
         if self.capital:
             if self.metal_tank.capacity < to_construct.cost.metal \
                     or self.is_metal_tank_full:
@@ -146,13 +155,13 @@ class Planet:
                     or self.is_deuterium_tank_full:
                 to_construct = self.deuterium_tank
         else:
-            def should_construct_tank(mine, tank, ratio):
+            def should_build_tank(mine, tank, ratio):
                 return float(mine.level) / (1 + tank.level) > ratio
-            if should_construct_tank(self.metal_mine, self.metal_tank, 7):
+            if should_build_tank(self.metal_mine, self.metal_tank, 7):
                 to_construct = self.metal_tank
-            elif should_construct_tank(self.crystal_mine, self.crystal_tank, 9):
+            elif should_build_tank(self.crystal_mine, self.crystal_tank, 9):
                 to_construct = self.crystal_tank
-        return to_construct
+        return self.requirements_for(to_construct)
 
     @classmethod
     def load(cls, **kwargs):
@@ -170,8 +179,7 @@ class Planet:
                 'fleet': self.fleet.dump(),
                 'resources': self.resources.dump(),
                 'construction_plans': [[cons.name, cons.level]
-                    for cons in self.construction_plans],
-        }
+                    for cons in self.construction_plans]}
 
         for constru in BUILDINGS.values():
             dump[constru.name] = getattr(self, constru.name).level
