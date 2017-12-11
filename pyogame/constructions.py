@@ -124,6 +124,10 @@ class RobotFactory(Constructions):
 
 
 class Shipyard(Constructions):
+    base_metal_cost = 200
+    base_crystal_cost = 400
+    base_deuterium_cost = 200
+    power = 2
     position = 1
     page = Pages.station
     requirements = [RobotFactory(2)]
