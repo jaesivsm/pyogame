@@ -1,9 +1,13 @@
 import logging
+from pyogame.numerable_constructions import NumerableConstructions
+from pyogame.constructions import Shipyard
+from pyogame.technologies import (ImpulseDrive, CombustionDrive,
+                                  Espionnage, Shields)
 
 logger = logging.getLogger(__name__)
 
 
-class Ships(object):
+class Ships:
     single_ship_capacity = 0
     are_transport = False
     xpath = None
@@ -36,33 +40,63 @@ class Ships(object):
         return "<Unknown Ships(%d)>" % self.quantity
 
     def __len__(self):
-        return self.quantity
+        return self.quantity if self.quantity > 0 else 0
 
 
-class PTs(Ships):
+class CivilShips(Ships, NumerableConstructions):
+    position = 0
+
+    def xpath(self):
+        return "//ul[@id='civil']/li[%d]/div/a" % self.position
+
+
+class SmallCargo(CivilShips):
     single_ship_capacity = 5000
+    metal_cost = 2000
+    crystal_cost = 2000
     are_transport = True
-    xpath = "//ul[@id='civil']/li[1]/div/a"
+    position = 1
     ships_id = 202
+    requirements = [Shipyard(2), CombustionDrive(2)]
 
 
-class GTs(Ships):
+class LargeCargo(CivilShips):
     single_ship_capacity = 25000
+    metal_cost = 6000
+    crystal_cost = 6000
     are_transport = True
-    xpath = "//ul[@id='civil']/li[2]/div/a"
+    position = 2
     ships_id = 203
+    requirements = [Shipyard(4), CombustionDrive(6)]
 
 
-class Probes(Ships):
+class Probes(CivilShips):
     single_ship_capacity = 5
-    xpath = "//ul[@id='civil']/li[5]/div/a"
+    crystal_cost = 1000
+    position = 5
     ships_id = 210
+    requirements = [Shipyard(3), CombustionDrive(3), Espionnage(2)]
 
 
-class Recycler(Ships):
+class Colony(CivilShips):
+    single_ship_capacity = 7500
+    metal_cost = 10000
+    crystal_cost = 20000
+    deuterium_cost = 10000
+    position = 3
+    ships_id = 208
+    requirements = [Shipyard(4), ImpulseDrive(3)]
+
+
+class Recycler(CivilShips):
+    metal_cost = 10000
+    crystal_cost = 6000
+    deuterium_cost = 2000
     single_ship_capacity = 20000
-    xpath = "//ul[@id='civil']/li[4]/div/a"
+    position = 4
     ships_id = 209
+    requirements = [Shipyard(4), CombustionDrive(6), Shields(2)]
 
 
-SHIPS_TYPES = {203: GTs, 202: PTs, 210: Probes, 209: Recycler}
+SHIPS_TYPES = {ship.ships_id: ship() for ship in (
+        SmallCargo, LargeCargo, Probes, Colony, Recycler)}
