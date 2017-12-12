@@ -12,7 +12,6 @@ from selenium.webdriver.support.ui import Select
 
 from pyogame.planet import Planet
 from pyogame.fleet import FlyingFleet
-from pyogame.constructions import BUILDINGS
 from pyogame.tools.const import MISSIONS, MISSIONS_DST, Pages
 from pyogame.tools.resources import RES_TYPES, Resources
 from pyogame.tools.common import GalaxyRow
@@ -103,14 +102,13 @@ class Interface:
         logger.debug('### updating %s states for %s', page, planet)
         source = html.fromstring(self.driver.page_source)
         for pos, ele in enumerate(source.xpath("//span[@class='level']")):
-            for building in BUILDINGS.values():
+            for building in planet.constructs:
                 if building.page is not page:
                     continue
                 # page resources and station don't start at the same level
                 offset = 0 if page is Pages.station else 1
                 if building.position != pos + offset:
                     continue
-                building = getattr(planet, building.name)
                 building.level = int(ele.text_content().split()[-1])
 
     def update_planet_fleet(self, planet):
@@ -135,7 +133,6 @@ class Interface:
                         name=' '.join(ships_str[:-1]),
                         quantity=int(ships_str[-1].replace('.', '')))
         logger.debug('%s got fleet %s', planet, planet.fleet)
-        planet.fleet_updated = True
 
     def update_empire_state(self, empire):
         logger.debug('Getting list of colonized planets')

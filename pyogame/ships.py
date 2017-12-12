@@ -1,53 +1,8 @@
-import logging
-from pyogame.numerable_constructions import NumerableConstructions
+from pyogame.abstract.ogame_objs import CivilShips
 from pyogame.constructions import Shipyard
 from pyogame.technologies import (ImpulseDrive, CombustionDrive,
                                   Espionnage, Shields)
 
-logger = logging.getLogger(__name__)
-
-
-class Ships:
-    single_ship_capacity = 0
-    are_transport = False
-    xpath = None
-    ships_id = None
-
-    def __init__(self, ships_id=0, name=None, quantity=0):
-        self.ships_id = ships_id if self.ships_id is None else self.ships_id
-        self.name = name
-        self.quantity = int(quantity)
-
-    @property
-    def capacity(self):
-        return self.quantity * self.single_ship_capacity
-
-    def copy(self):
-        return self.__class__(self.ships_id, self.name, self.quantity)
-
-    @classmethod
-    def load(cls, **kwargs):
-        ships_cls = SHIPS_TYPES.get(kwargs.get('ships_id'), cls)
-        return ships_cls(**kwargs)
-
-    def dump(self):
-        return {'ships_id': self.ships_id,
-                'name': self.name, 'quantity': self.quantity}
-
-    def __repr__(self):
-        if self.name:
-            return r"<%r(%d)>" % (self.name, self.quantity)
-        return "<Unknown Ships(%d)>" % self.quantity
-
-    def __len__(self):
-        return self.quantity if self.quantity > 0 else 0
-
-
-class CivilShips(Ships, NumerableConstructions):
-    position = 0
-
-    def xpath(self):
-        return "//ul[@id='civil']/li[%d]/div/a" % self.position
 
 
 class SmallCargo(CivilShips):
@@ -98,5 +53,5 @@ class Recycler(CivilShips):
     requirements = [Shipyard(4), CombustionDrive(6), Shields(2)]
 
 
-SHIPS_TYPES = {ship.ships_id: ship() for ship in (
-        SmallCargo, LargeCargo, Probes, Colony, Recycler)}
+SHIPS_TYPES = {ship_cls().name: ship_cls
+               for ship_cls in CivilShips.__subclasses__()}

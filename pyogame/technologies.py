@@ -1,15 +1,6 @@
-from pyogame.tools.const import Pages
-from pyogame.constructions import Constructions, Laboratory
-
-
-class Technology(Constructions):
-    page = Pages.research
-    research_number = None
-    power = 2
-
-    @property
-    def css_dom(self):
-        return ".research%d a.fastBuild" % self.research_number
+from pyogame.abstract.collections import ConstructCollection
+from pyogame.abstract.ogame_objs import Technology
+from pyogame.constructions import Laboratory
 
 
 class Energy(Technology):
@@ -129,3 +120,11 @@ class InterGalacticNetwork(Technology):
 class Graviton(Technology):
     research_number = 199
     requirements = [Laboratory(12)]
+
+
+class Technologies(ConstructCollection):
+
+    @property
+    def registry(self):
+        return {tech_cls().name: tech_cls
+                for tech_cls in Technology.__subclasses__()}

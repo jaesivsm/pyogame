@@ -1,31 +1,33 @@
 import logging
 
+from pyogame.abstract.collections import Collection
 from pyogame.fleet import Missions, Fleet
 from pyogame.planet import Planet
-from pyogame.tools import resources, common
+from pyogame.tools import resources
+from pyogame.technologies import Technologies
 
 logger = logging.getLogger(__name__)
 
 
-class PlanetCollection(common.Collection):
+class PlanetCollection(Collection):
 
     def __init__(self, data, capital=None, **kwargs):
         self.capital_coords = capital
-        self.missions = Missions()
+        self.missions = kwargs.get('missions', Missions())
+        self.technologies = kwargs.get('technologies', Technologies())
         super().__init__(data)
 
-    def add(self, planet):
-        if planet.key in self.data:
-            return self.data[planet.key]
-        self.data[planet.key] = planet
-        if self.capital_coords and self.capital_coords == planet.coords:
-            planet.capital = True
-        return planet
+    def add(self, obj):
+        if obj.key in self.data:
+            return self.data[obj.key]
+        self.data[obj.key] = obj
+        if self.capital_coords and self.capital_coords == obj.coords:
+            obj.capital = True
+        obj.technologies = self.technologies
+        return obj
 
-    def remove(self, planet):
-        if planet.key in self.data:
-            del self.data[planet.key]
-        return planet
+    def remove(self, obj):
+        return self.data.pop(obj.key, None)
 
     @property
     def colonies(self):
@@ -83,11 +85,14 @@ class PlanetCollection(common.Collection):
                 cheapest = planet
         return cheapest
 
-    def load(self, **kwargs):
-        for planet_dict in kwargs.get('planets', {}):
+    def load(self, data):
+        for planet_dict in data.get('planets', {}):
             self.add(Planet.load(**planet_dict))
-        self.missions = Missions.load(**kwargs['missions'])
+        self.missions = Missions.load(**data.get('missions', {}))
+        self.technologies = Technologies.load(
+                **data.get('technologies', {}))
 
     def dump(self):
         return {'planets': [planet.dump() for planet in self],
-                'missions': self.missions.dump()}
+                'technologies': {'data': self.technologies.dump()},
+                'missions': {'data': self.missions.dump()}}

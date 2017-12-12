@@ -1,7 +1,7 @@
 import logging
 from pyogame.tools import Resources
 from pyogame.fleet import Fleet
-from pyogame.constructions import BUILDINGS
+from pyogame.constructions import Constructions
 from pyogame.tools.common import coords_to_key
 
 logger = logging.getLogger(__name__)
@@ -23,60 +23,45 @@ class Planet:
 
         self.fleet = kwargs.get('fleet', Fleet())
         self.resources = kwargs.get('resources', Resources())
-        self.station_updated = False
-        self.building_updated = False
-        self.fleet_updated = False
-        self.metal_mine = None
-        self.crystal_mine = None
-        self.deuterium_synthetizer = None
-        self.solar_plant = None
-        self.metal_tank = None
-        self.crystal_tank = None
-        self.deuterium_tank = None
-        self.robot_factory = None
-        self.nanite_factory = None
-
-        self.construction_plans = []
-        for construction in BUILDINGS.values():
-            setattr(self, construction.name,
-                    construction.__class__(kwargs.get(construction.name, 0)))
-
-        for plan in kwargs.get('construction_plans', []):
-            self.add_construction_plan(plan[0], plan[1])
-
+        self.constructs = kwargs.get('constructs', Constructions())
+        self.plans = kwargs.get('plans', Constructions())
         self.remove_old_plans()
 
     def add_construction_plan(self, new_plan, level=None):
         # checking type
-        new = BUILDINGS.get(new_plan)
-        if new is None:
+        new_cls = self.constructs.registry.get(new_plan)
+        if new_cls is None:
             logger.error("Can't make out what %r is", new_plan)
             return
-        current = getattr(self, new_plan)
+        current = self.get_curr(new_plan)
 
         # checking level against current
         if level is None:
             level = current.level + 1
-        new = new.__class__(level)
+        new = new_cls(level)
         if new.level <= current.level:
             logger.error("%r already have %r can't construct %r",
                          self, current, new)
             return
 
         # checking level against existing plan
-        for existing_plan in self.construction_plans:
+        for existing_plan in self.plans:
             if new.name == existing_plan and new.level <= existing_plan.level:
                 logger.error("%r already have %r planned for construction, "
                         "can't construct %r", self, existing_plan, new)
                 return
 
-        self.construction_plans.append(new)
+        self.plans.add(new)
+
+    def get_curr(self, obj):
+        return self.constructs.cond(
+                name=obj if isinstance(obj, str) else obj.name).first
 
     def remove_old_plans(self):
-        to_remove = [plan for plan in self.construction_plans
-                     if plan.level <= getattr(self, plan.name).level]
+        to_remove = [plan for plan in self.plans
+                     if plan.level <= self.get_curr(plan).level]
         for plan in to_remove:
-            self.construction_plans.remove(plan)
+            self.plans.remove(plan)
 
     @property
     def key(self):
@@ -96,35 +81,35 @@ class Planet:
 
     @property
     def is_metal_tank_full(self):
-        return self.resources.metal >= self.metal_tank.capacity
+        return self.resources.metal >= self.get_curr('metal_tank').capacity
 
     @property
     def is_crystal_tank_full(self):
-        return self.resources.crystal >= self.crystal_tank.capacity
+        return self.resources.crystal >= self.get_curr('crystal_tank').capacity
 
     @property
     def is_deuterium_tank_full(self):
-        return self.resources.deuterium >= self.deuterium_tank.capacity
+        current_deut_cap = self.get_curr('deuterium_tank').capacity
+        return self.resources.deuterium >= current_deut_cap
 
     def time_to_construct(self, cost):
         return ((float(cost.metal) + cost.crystal)
-                / (2500. * (float(self.robot_factory.level) + 1.)
-                * pow(2., float(self.nanite_factory.level))))
+                / (2500. * (float(self.get_curr('robot_factory').level) + 1.)
+                * pow(2., float(self.get_curr('nanite_factory').level))))
 
     def _get_next_out_of_plans(self):
-        if not self.construction_plans:
+        if not self.plans.data:
             return None
-        return cheapest(self.requirements_for(plan)
-                        for plan in self.construction_plans)
+        return cheapest(self.requirements_for(plan) for plan in self.plans)
 
     def requirements_for(self, building):
         if building.requirements:
             eligible_reqs = [self.requirements_for(req)
                              for req in building.requirements
-                             if req.level > getattr(self, req.name).level]
+                             if req.level > self.get_curr(req).level]
             if eligible_reqs:
                 return cheapest(eligible_reqs)
-        if building.level > getattr(self, building.name).level + 1:
+        if building.level > self.get_curr(building).level + 1:
             return self.requirements_for(
                     building.__class__(building.level - 1))
         return building
@@ -136,54 +121,60 @@ class Planet:
         if to_construct:
             return self.requirements_for(to_construct)
 
-        to_construct = self.metal_mine
-        if self.deuterium_synthetizer.level < self.metal_mine.level - 7:
-            to_construct = self.deuterium_synthetizer
-        if self.crystal_mine.level < self.metal_mine.level - 3:
-            to_construct = self.crystal_mine
+        metal_mine = self.get_curr('metal_mine')
+        metal_tank = self.get_curr('metal_tank')
+        crystal_tank = self.get_curr('crystal_tank')
+        deut_tank = self.get_curr('deuterium_tank')
+
+        to_construct = metal_mine
+        if self.get_curr('deuterium_synthetizer').level < metal_mine.level - 7:
+            to_construct = self.get_curr('deuterium_synthetizer')
+        if self.get_curr('crystal_mine').level < metal_mine.level - 3:
+            to_construct = self.get_curr('crystal_mine')
         # more or less 5%
         if to_construct.cost.energy * .95 > self.resources.energy:
-            to_construct = self.solar_plant
+            to_construct = self.get_curr('solar_plant')
         if self.capital:
-            if self.metal_tank.capacity < to_construct.cost.metal \
+            if metal_tank.capacity < to_construct.cost.metal \
                     or self.is_metal_tank_full:
-                to_construct = self.metal_tank
-            elif self.crystal_tank.capacity < to_construct.cost.crystal \
+                to_construct = metal_tank
+            elif crystal_tank.capacity < to_construct.cost.crystal \
                     or self.is_crystal_tank_full:
-                to_construct = self.crystal_tank
-            elif self.deuterium_tank.capacity < to_construct.cost.deuterium \
+                to_construct = crystal_tank
+            elif deut_tank.capacity < to_construct.cost.deuterium \
                     or self.is_deuterium_tank_full:
-                to_construct = self.deuterium_tank
+                to_construct = deut_tank
         else:
-            def should_build_tank(mine, tank, ratio):
+            def should_build_tank(res_type, ratio):
+                mine = self.get_curr('%s_mine' % res_type)
+                tank = self.get_curr('%s_tank' % res_type)
                 return float(mine.level) / (1 + tank.level) > ratio
-            if should_build_tank(self.metal_mine, self.metal_tank, 7):
-                to_construct = self.metal_tank
-            elif should_build_tank(self.crystal_mine, self.crystal_tank, 9):
-                to_construct = self.crystal_tank
+            if should_build_tank('metal', 7):
+                to_construct = self.get_curr('metal_tank')
+            elif should_build_tank('crystal', 9):
+                to_construct = self.get_curr('crystal_tank')
         return self.requirements_for(to_construct)
 
     @classmethod
     def load(cls, **kwargs):
-        kwargs['fleet'] = Fleet.load(**kwargs.get('fleet', {}))
-        kwargs['resources'] = Resources.load(**kwargs.get('resources', {}))
+        for key, attr_cls in (('fleet', Fleet),
+                              ('resources', Resources),
+                              ('constructs', Constructions),
+                              ('plans', Constructions)):
+            kwargs[key] = attr_cls.load(**kwargs.get(key, {}))
         return cls(**kwargs)
 
     def dump(self):
-        dump = {'name': self.name,
+        return {'name': self.name,
                 'coords': self.coords,
                 'idle': self.idle,
                 'position': self.position,
                 'waiting_for': self.waiting_for,
                 'capital': self.capital,
-                'fleet': self.fleet.dump(),
                 'resources': self.resources.dump(),
-                'construction_plans': [[cons.name, cons.level]
-                    for cons in self.construction_plans]}
-
-        for constru in BUILDINGS.values():
-            dump[constru.name] = getattr(self, constru.name).level
-        return dump
+                'fleet': {'data': self.fleet.dump()},
+                'constructs': {'data': self.constructs.dump()},
+                'plans': {'data': self.plans.dump()}}
 
     def __repr__(self):
         return r"<Planet(%r, %r, %r)>" % (

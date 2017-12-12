@@ -53,7 +53,7 @@ class Context:
             cache = self.load().get(self._username, None)
             if not cache:
                 return self._empire
-            self._empire.load(**cache)
+            self._empire.load(cache)
         except ValueError:
             logger.error('Cache has been corrupted, ignoring it')
             return self._empire

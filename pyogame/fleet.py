@@ -3,14 +3,19 @@ import datetime
 import dateutil.parser
 from uuid import uuid4
 
-from pyogame.ships import Ships
+from pyogame.ships import SHIPS_TYPES
 from pyogame.tools.resources import pretty_number
-from pyogame.tools.common import coords_to_key, Collection
+from pyogame.tools.common import coords_to_key
+from pyogame.abstract.collections import Collection, MultiConstructCollection
 
 logger = logging.getLogger(__name__)
 
 
-class Fleet(Collection):
+class Fleet(MultiConstructCollection):
+
+    @property
+    def registry(self):
+        return SHIPS_TYPES
 
     @property
     def capacity(self):
@@ -19,23 +24,6 @@ class Fleet(Collection):
     @property
     def transports(self):
         return self.cond(are_transport=True)
-
-    def add(self, ships_id=0, ships=None, **kwargs):
-        if ships is None:
-            ships = Ships.load(ships_id=ships_id, **kwargs)
-        if isinstance(ships, Ships) and ships.quantity:
-            if not ships.ships_id in self.data:
-                self.data[ships.ships_id] = ships.copy()
-            else:
-                self.data[ships.ships_id].quantity += ships.quantity
-
-    def remove(self, ships_id=0, ships=None, **kwargs):
-        if ships is None:
-            ships = self.__class__.load(ships_id=ships_id, **kwargs)
-        if ships.quantity:
-            self.data[ships.ships_id].quantity -= ships.quantity
-        if self.data[ships.ships_id].quantity <= 0:
-            del self.data[ships.ships_id]
 
     def for_moving(self, resources):
         fleet, amount = Fleet(), resources.movable.total
@@ -72,26 +60,15 @@ class Fleet(Collection):
                 fleet.add(ships=ships)
         return fleet
 
-    @classmethod
-    def load(cls, **kwargs):
-        ships_types = kwargs.pop('ships')
-        fleet = cls(**kwargs)
-        for ships in ships_types:
-            fleet.add(**ships)
-        return fleet
-
-    def dump(self):
-        return {'ships': [ships.dump() for ships in self.data.values()]}
-
     def __len__(self):
         return sum([ships.quantity for ships in self])
 
 
 class FlyingFleet(Fleet):
 
-    def __init__(self, src, dst, flight_type=None, travel_id=None,
+    def __init__(self, data, src, dst, flight_type=None, travel_id=None,
             arrival_time=None, return_time=None):
-        super(FlyingFleet, self).__init__()
+        super().__init__(data)
         self.src = coords_to_key(src)
         self.dst = coords_to_key(dst)
         self.travel_id = travel_id if travel_id is not None else str(uuid4())
@@ -114,7 +91,7 @@ class FlyingFleet(Fleet):
         return self.return_time < datetime.datetime.now()
 
     def dump(self):
-        dump = super(FlyingFleet, self).dump()
+        dump = super().dump()
         dump.update({'travel_id': self.travel_id,
                 'flight_type': self.flight_type,
                 'src': self.src, 'arrival_time': self.arrival_time,
@@ -129,11 +106,12 @@ class FlyingFleet(Fleet):
 
 class Missions(Collection):
 
-    def add(self, fleet=None, **kwargs):
-        if fleet is None or not isinstance(fleet, Fleet):
-            fleet = FlyingFleet(**kwargs)
-        self.data[fleet.travel_id] = fleet
-        return fleet.travel_id
+    def add(self, obj):
+        self.data[obj.travel_id] = obj
+        return obj.travel_id
+
+    def remove(self, obj):
+        return self.data.pop(obj.travel_id, None)
 
     def clean(self, awaited_travel=None):
         awaited_travel = awaited_travel or []
@@ -153,11 +131,11 @@ class Missions(Collection):
         return self.cond(is_returned=True)
 
     @classmethod
-    def load(cls, **kwargs):
+    def load(cls, data):
         missions = cls()
-        for mission in kwargs['missions']:
-            missions.add(FlyingFleet.load(**mission))
+        for mission in data.values():
+            missions.add(FlyingFleet(**mission))
         return missions
 
     def dump(self):
-        return {'missions': [fleet.dump() for fleet in self]}
+        return {fleet.travel_id: fleet.dump() for fleet in self}
