@@ -23,7 +23,6 @@ class PlanetCollection(Collection):
         self.data[obj.key] = obj
         if self.capital_coords and self.capital_coords == obj.coords:
             obj.capital = True
-        obj.technologies = self.technologies
         return obj
 
     def remove(self, obj):

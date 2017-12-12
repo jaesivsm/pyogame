@@ -98,18 +98,26 @@ class Interface:
             logger.exception("ERROR: Couldn't update resources")
         return resources
 
-    def update_buildings(self, page, planet=None):
+    def update_buildings(self, page, planet):
         logger.debug('### updating %s states for %s', page, planet)
         source = html.fromstring(self.driver.page_source)
         for pos, ele in enumerate(source.xpath("//span[@class='level']")):
-            for building in planet.constructs:
-                if building.page is not page:
-                    continue
-                # page resources and station don't start at the same level
-                offset = 0 if page is Pages.station else 1
-                if building.position != pos + offset:
-                    continue
-                building.level = int(ele.text_content().split()[-1])
+            # page resources and station don't start at the same level
+            offset = 0 if page is Pages.station else 1
+            builds = planet.constructs.cond(page=page, position=pos + offset)
+            if builds.first is None:
+                continue  # building is not supported yet
+            builds.first.level = int(ele.text_content().split()[-1])
+
+    def update_technologies(self, empire):
+        logger.debug('### updating tech states')
+        source = html.fromstring(self.driver.page_source)
+        for pos, ele in enumerate(source.xpath("//span[@class='level']")):
+            tech = empire.technologies.cond(position=pos).first
+            try:
+                tech.level = int(ele.text_content().split()[-1])
+            except ValueError:  # supporting temp upgrade, shifting real level
+                tech.level = int(ele.text_content().split()[-2])
 
     def update_planet_fleet(self, planet):
         planet = planet if planet else self.current_planet
@@ -171,6 +179,9 @@ class Interface:
         for planet in planets:
             for page in Pages.resources, Pages.station, Pages.fleet:
                 self.go_to(planet=planet, page=page)
+            if planet.capital:
+                self.go_to(planet=planet, page=Pages.research)
+                self.update_technologies(planets)
 
     def construct(self, construct, planet=None):
         planet = planet if planet is not None else self.current_planet
