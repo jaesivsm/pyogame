@@ -22,6 +22,8 @@ def get_attr(element, attrs):
         element = element.constructs.cond(name=attrs.split('.')[0]).first
     else:
         element = getattr(element, attrs.split('.')[0])
+        if attrs.split('.')[0] == 'to_construct':
+            element = element()
     for attr in attrs.split('.')[1:]:
         element = getattr(element, attr)
     return element

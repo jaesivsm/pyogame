@@ -153,7 +153,7 @@ class Interface:
         logger.debug('Getting list of colonized planets')
         self.go_to(planet=empire.capital, page=Pages.overview)
         source = html.fromstring(self.driver.page_source)
-        empire.is_researching_tech = bool(source.xpath(
+        empire.is_researching = bool(source.xpath(
                 "//div[@id='overviewBottom']"
                 "/div[@class='content-box-s'][2]"
                 "//td[@class='first']"))

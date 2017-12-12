@@ -67,11 +67,11 @@ class Resources:
                    for res_type, amount in self.movable)
 
     def __lt__(self, other):
-        return any(amount < other[res_type]
+        return all(amount < other[res_type]
                    for res_type, amount in self.movable)
 
     def __le__(self, other):
-        return any(amount <= other[res_type]
+        return all(amount <= other[res_type]
                    for res_type, amount in self.movable)
 
     def __len__(self):

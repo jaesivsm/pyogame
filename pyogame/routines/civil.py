@@ -8,19 +8,19 @@ logger = logging.getLogger(__name__)
 
 def in_place_empire_upgrade(interface, empire, construct_on_capital=True):
     logger.debug('### In place empire upgrade')
-    capital_research = empire.planner_next_plan(empire.capital)
-    if not empire.is_researching_tech \
-            and capital_research \
-            and capital_research.cost <= empire.resources:
+    plan = empire.empire_next_plan(empire.capital)
+    if not empire.is_researching \
+            and plan \
+            and plan.cost <= empire.capital.resources:
         logger.warning("Resources are available on %s to construct %s "
-                       "(lvl %d)", empire.capital, capital_research.name,
-                       capital_research.level + 1)
-        interface.construct(capital_research, empire.capital)
+                       "(lvl %d)", empire.capital, plan.name,
+                       plan.level + 1)
+        interface.construct(plan, empire.capital)
     for planet in empire.idles:
         if planet.capital and not construct_on_capital:
             continue
         planet, construct = empire.requirements_for(
-                planet, planet.to_construct)
+                planet, planet.to_construct(empire.filter_out_if_researching))
         logger.debug('%r > %r = %r', planet.resources, construct.cost,
                      planet.resources >= construct.cost)
         if planet.resources >= construct.cost:

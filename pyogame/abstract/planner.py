@@ -26,11 +26,12 @@ class PlannerMixin:
     def _planner_get_curr(self, obj):
         return self._planner_collection.cond(name=obj.name).first
 
-    def planner_next_plan(self):
+    def planner_next_plan(self, filter_meth):
         if not self._planner_plans.data:
             return None
-        return cheapest(self.requirements_for(plan)
-                        for plan in self._planner_plans)
+        return cheapest(filter(filter_meth,
+                               [self.requirements_for(plan)
+                                for plan in self._planner_plans]))
 
     def planner_add(self, plan_name, level=None):
         # checking type

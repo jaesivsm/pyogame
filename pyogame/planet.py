@@ -62,18 +62,14 @@ class Planet(PlannerMixin):
                 / (2500. * (float(self.get_curr('robot_factory').level) + 1.)
                 * pow(2., float(self.get_curr('nanite_factory').level))))
 
-    def _get_next_out_of_plans(self):
-        if not self.plans.data:
-            return None
-        return cheapest(self.requirements_for(plan) for plan in self.plans)
-
-    def requirements_for(self, building):
+    def requirements_for(self, building, filter_=None):
         building_types = tuple(self.constructs.registry.values())
         if building.requirements:
-            eligible_reqs = [self.requirements_for(req)
+            eligible_reqs = list(filter(filter_,
+                            [self.requirements_for(req)
                              for req in building.requirements
                              if isinstance(req, building_types)
-                                and req.level > self.get_curr(req).level]
+                                and req.level > self.get_curr(req).level]))
             if eligible_reqs:
                 return cheapest(eligible_reqs)
         if building.level > self.get_curr(building).level + 1:
@@ -81,10 +77,9 @@ class Planet(PlannerMixin):
                     building.__class__(building.level - 1))
         return building
 
-    @property
-    def to_construct(self):
+    def to_construct(self, filter_meth=None):
         # Handling construction list
-        to_construct = self.planner_next_plan()
+        to_construct = self.planner_next_plan(filter_meth)
         if to_construct:
             return self.requirements_for(to_construct)
 

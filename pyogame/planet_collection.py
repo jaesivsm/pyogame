@@ -7,6 +7,7 @@ from pyogame.planet import Planet
 from pyogame.tools import resources
 from pyogame.technologies import Technologies
 from pyogame.tools.common import cheapest
+from pyogame.constructions import Laboratory
 
 logger = logging.getLogger(__name__)
 
@@ -20,33 +21,46 @@ class PlanetCollection(Collection, PlannerMixin):
         self.plans = kwargs.get('plans', Technologies())
         super().__init__(data)
         PlannerMixin.__init__(self, 'technologies', 'plans')
-        self.is_researching_tech = False
+        self.is_researching = False
 
-    def planner_next_plan(self, planet):
+    def empire_next_plan(self, planet):
         if not self._planner_plans.data:
             return None
-        return cheapest(self.requirements_for(planet, plan)[1]
-                        for plan in self._planner_plans)
+        return cheapest(filter(self.filter_out_if_researching,
+                               (self.requirements_for(planet, plan)[1]
+                                for plan in self._planner_plans)))
 
-    def requirements_for(self, planet, construction):
+    def is_tech_type(self, obj):
+        return isinstance(obj, tuple(self.technologies.registry.values()))
 
-        def is_tech_type(obj):
-            return isinstance(obj, tuple(self.technologies.registry.values()))
+    def filter_out_if_researching(self, elem):
+        return not self.is_researching or (
+                self.is_researching and (self.is_tech_type(elem)
+                                         or isinstance(elem, Laboratory)))
 
-        def current_tech_level(obj):
-            return self.technologies.cond(name=obj.name).first.level
+    def requirements_for(self, planet, construction, only_tech=True):
+
+        def current_level(obj):
+            current = self.technologies.cond(name=obj.name).first
+            if current is None:
+                current = self.capital.constructs.cond(name=obj.name).first
+            return current.level
 
         if construction.requirements:
-            eligible_reqs = [self.requirements_for(self.capital, req)[1]
+            eligible_reqs = [self.requirements_for(self.capital, req, False)[1]
                     for req in construction.requirements
-                    if is_tech_type(req)
-                        and req.level > current_tech_level(req)]
+                    if (only_tech and self.is_tech_type(req)
+                        and req.level > current_level(req))
+                        or (not only_tech
+                            and req.level > current_level(req))]
             if eligible_reqs:
-                return self.capital, cheapest(eligible_reqs)
-        if is_tech_type(construction):
-            if construction.level > current_tech_level(construction) + 1:
+                return self.capital, cheapest(filter(
+                    self.filter_out_if_researching, eligible_reqs))
+        if only_tech and self.is_tech_type(construction) or not only_tech:
+            if construction.level > current_level(construction) + 1:
                 return self.requirements_for(self.capital,
-                        construction.__class__(construction.level - 1))
+                        construction.__class__(construction.level - 1),
+                        only_tech=False)
             return self.capital, construction
         return planet, construction
 
@@ -107,18 +121,21 @@ class PlanetCollection(Collection, PlannerMixin):
     def cheapest(self, construct_on_capital=True):
         "return the planet with the cheapest construction of any type"
         cheapest_planet = None
+        filter_meth = self.filter_out_if_researching
         for planet in self:
             if not construct_on_capital and planet.capital:
                 continue
             if not cheapest_planet:
                 cheapest_planet = planet
-            elif planet.to_construct.cost.movable.total \
-                    < cheapest_planet.to_construct.cost.movable.total:
+                continue
+            new_const = planet.to_construct(filter_meth)
+            cheapest_yet = cheapest_planet.to_construct(filter_meth)
+            if new_const.cost.movable.total < cheapest_yet.cost.movable.total:
                 cheapest_planet = planet
         if cheapest_planet is None:
             return None, None
         return self.requirements_for(cheapest_planet,
-                cheapest_planet.to_construct)
+                cheapest_planet.to_construct(filter_meth))
 
     def load(self, data):
         for planet_dict in data.get('planets', {}):
