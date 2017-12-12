@@ -57,6 +57,11 @@ class Interface:
     def login(self):
         logger.debug('### Logging in with identity %r', self.user)
         self.driver.get(self.url)
+        try:  # trying to ignore ads
+            self.click(css='.openX_int_closeButton a')
+        except Exception:
+            pass
+
         self.driver.find_element_by_id("loginBtn").click()
         Select(self.driver.find_element_by_id('serverLogin'))\
                 .select_by_visible_text(self.univers)
@@ -114,6 +119,8 @@ class Interface:
         source = html.fromstring(self.driver.page_source)
         for pos, ele in enumerate(source.xpath("//span[@class='level']")):
             tech = empire.technologies.cond(position=pos).first
+            if tech is None:
+                continue
             try:
                 tech.level = int(ele.text_content().split()[-1])
             except ValueError:  # supporting temp upgrade, shifting real level
@@ -144,7 +151,13 @@ class Interface:
 
     def update_empire_state(self, empire):
         logger.debug('Getting list of colonized planets')
+        self.go_to(planet=empire.capital, page=Pages.overview)
         source = html.fromstring(self.driver.page_source)
+        empire.is_researching_tech = bool(source.xpath(
+                "//div[@id='overviewBottom']"
+                "/div[@class='content-box-s'][2]"
+                "//td[@class='first']"))
+
         planets_list_elem = source.xpath("//div[@id='planetList']")[0]
         existing = {}
         for position, elem in enumerate(planets_list_elem):
@@ -189,7 +202,7 @@ class Interface:
         self.click(css=construct.css_dom)
         self.update_planet_resources(planet)
         planet.idle = False
-        planet.remove_old_plans()
+        planet.planner_remove_old()
 
     def go_to(self, planet=None, page=None, update=True):
         if planet is not None and self.current_planet is not planet:

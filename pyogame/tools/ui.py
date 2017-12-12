@@ -18,7 +18,11 @@ def pstr(value, is_title=False):
 def get_attr(element, attrs):
     if not isinstance(attrs, str):
         attrs = attrs[1]
-    for attr in attrs.split('.'):
+    if not hasattr(element, attrs.split('.')[0]):
+        element = element.constructs.cond(name=attrs.split('.')[0]).first
+    else:
+        element = getattr(element, attrs.split('.')[0])
+    for attr in attrs.split('.')[1:]:
         element = getattr(element, attr)
     return element
 

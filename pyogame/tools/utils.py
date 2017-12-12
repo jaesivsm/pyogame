@@ -34,6 +34,8 @@ def parse_args():
     # build a specific building on a specific planet
     parser.add_argument('-b', '--build', dest='build',
             action='store', default=False)
+    parser.add_argument('-t', '--tech', dest='tech',
+            action='store', default=False)
     parser.add_argument('-i', '--idles', dest='idles',
             action='store_true', default=False)
     parser.add_argument('--ui', dest='ui',

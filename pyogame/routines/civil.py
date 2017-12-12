@@ -8,16 +8,26 @@ logger = logging.getLogger(__name__)
 
 def in_place_empire_upgrade(interface, empire, construct_on_capital=True):
     logger.debug('### In place empire upgrade')
+    capital_research = empire.planner_next_plan(empire.capital)
+    if not empire.is_researching_tech \
+            and capital_research \
+            and capital_research.cost <= empire.resources:
+        logger.warning("Resources are available on %s to construct %s "
+                       "(lvl %d)", empire.capital, capital_research.name,
+                       capital_research.level + 1)
+        interface.construct(capital_research, empire.capital)
     for planet in empire.idles:
         if planet.capital and not construct_on_capital:
             continue
-        logger.debug('%r > %r = %r', planet.resources, planet.to_construct.cost,
-                     planet.resources >= planet.to_construct.cost)
-        if planet.resources >= planet.to_construct.cost:
+        planet, construct = empire.requirements_for(
+                planet, planet.to_construct)
+        logger.debug('%r > %r = %r', planet.resources, construct.cost,
+                     planet.resources >= construct.cost)
+        if planet.resources >= construct.cost:
             logger.warning("Resources are available on %s to construct %s "
-                           "(lvl %d)", planet, planet.to_construct.name,
-                           planet.to_construct.level + 1)
-            interface.construct(planet.to_construct, planet)
+                           "(lvl %d)", planet, construct.name,
+                           construct.level + 1)
+            interface.construct(construct, planet)
 
 
 def rapatriate(interface, empire, destination=None):
@@ -47,13 +57,13 @@ def plan_construction(interface, empire, construct_on_capital=True):
     logger.debug('### plan construction')
     source = empire.capital
     while True:
-        planet = empire.idles.cheapest(construct_on_capital)
+        planet, construct = empire.idles.cheapest(construct_on_capital)
         if not planet:
             logger.info("No eligible planet for construction")
             break
-        cost = planet.to_construct.cost
+        cost = construct.cost
         logger.info("Willing to construct %s on %s for %s",
-                    planet.to_construct, planet, cost.movable)
+                    construct, planet, cost.movable)
 
         if source.resources.movable < cost.movable:
             logger.info("Not enough resources on %s (having %s)",
@@ -65,11 +75,11 @@ def plan_construction(interface, empire, construct_on_capital=True):
             break
 
         logger.warning('Sending resources to construct %s on %s',
-                       planet.to_construct, planet)
+                       construct, planet)
         travel_id = transport(interface, empire,
                               source, planet, resources=cost)
 
-        planet.waiting_for[travel_id] = planet.to_construct.name
+        planet.waiting_for[travel_id] = construct.name
 
 
 def resources_reception_and_construction(interface, empire):
