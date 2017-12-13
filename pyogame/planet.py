@@ -2,7 +2,7 @@ import logging
 from pyogame.tools import Resources
 from pyogame.fleet import Fleet
 from pyogame.constructions import Constructions
-from pyogame.tools.common import coords_to_key, cheapest
+from pyogame.tools.common import coords_to_key
 from pyogame.abstract.planner import PlannerMixin
 
 logger = logging.getLogger(__name__)
@@ -62,27 +62,25 @@ class Planet(PlannerMixin):
                 / (2500. * (float(self.get_curr('robot_factory').level) + 1.)
                 * pow(2., float(self.get_curr('nanite_factory').level))))
 
-    def requirements_for(self, building, filter_=None):
+    def requirements_for(self, building):
         building_types = tuple(self.constructs.registry.values())
-        if building.requirements:
-            eligible_reqs = list(filter(filter_,
-                            [self.requirements_for(req)
-                             for req in building.requirements
-                             if isinstance(req, building_types)
-                                and req.level > self.get_curr(req).level]))
-            if eligible_reqs:
-                return cheapest(eligible_reqs)
+        unmatched_req = False
+        for req in building.requirements or []:
+            if (isinstance(req, building_types)
+                    and req.level > self.get_curr(req).level):
+                unmatched_req = True
+                yield from self.requirements_for(req)
+        if unmatched_req:
+            return
         if building.level > self.get_curr(building).level + 1:
-            return self.requirements_for(
+            yield from self.requirements_for(
                     building.__class__(building.level - 1))
-        return building
+            return
+        yield building
 
+    @property
     def to_construct(self, filter_meth=None):
         # Handling construction list
-        to_construct = self.planner_next_plan(filter_meth)
-        if to_construct:
-            return self.requirements_for(to_construct)
-
         metal_mine = self.get_curr('metal_mine')
         metal_tank = self.get_curr('metal_tank')
         crystal_tank = self.get_curr('crystal_tank')
@@ -115,7 +113,7 @@ class Planet(PlannerMixin):
                 to_construct = self.get_curr('metal_tank')
             elif should_build_tank('crystal', 9):
                 to_construct = self.get_curr('crystal_tank')
-        return self.requirements_for(to_construct)
+        yield from self.requirements_for(to_construct)
 
     @classmethod
     def load(cls, **kwargs):
@@ -123,7 +121,7 @@ class Planet(PlannerMixin):
                               ('resources', Resources),
                               ('constructs', Constructions),
                               ('plans', Constructions)):
-            kwargs[key] = attr_cls.load(**kwargs.get(key, {}))
+            kwargs[key] = attr_cls.load(**kwargs.get(key, {'data': {}}))
         return cls(**kwargs)
 
     def dump(self):

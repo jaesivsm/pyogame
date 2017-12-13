@@ -1,3 +1,4 @@
+from itertools import chain
 from collections import defaultdict
 
 from pyogame.tools.resources import pretty_number
@@ -15,7 +16,7 @@ def pstr(value, is_title=False):
     return str(value)
 
 
-def print_lines(iterable, *columns):
+def print_lines(iterables, *columns):
     lenghts = defaultdict(int)
 
     def set_max_len(col_title, value, is_title=False):
@@ -25,7 +26,7 @@ def print_lines(iterable, *columns):
 
     for title, column_value_getter in columns:
         set_max_len(title, title, is_title=True)
-        for element in iterable:
+        for element in chain(*iterables):
             set_max_len(title, column_value_getter(element))
 
     def add_to_line(col_title, value, space=' ', sep='|'):
@@ -41,7 +42,7 @@ def print_lines(iterable, *columns):
     print(line)
     print(sep_line)
 
-    for element in iterable:
+    for element in chain(*iterables):
         line = '|'
         for title, column_value_getter in columns:
             value = pstr(column_value_getter(element))
@@ -51,7 +52,7 @@ def print_lines(iterable, *columns):
 
 
 def default_col(key):
-    return key.split('_')[-1][0:4], lambda x: getattr(x, key)
+    return key.split('_')[-1][0:4], lambda x: getattr(x, key, '--')
 
 
 def construct_level_col(key, title=None):
@@ -59,7 +60,7 @@ def construct_level_col(key, title=None):
 
 
 def print_overall_status(empire):
-    print_lines(empire,
+    print_lines((empire,),
                 default_col('name'),
                 default_col('key'),
                 default_col('capital'),
@@ -73,7 +74,7 @@ def print_overall_status(empire):
 
 
 def print_empire_buildings(empire):
-    print_lines(empire,
+    print_lines((empire,),
                 default_col('name'),
                 default_col('key'),
                 construct_level_col('metal_mine'),
@@ -88,8 +89,24 @@ def print_empire_buildings(empire):
                 construct_level_col('laboratory'))
 
 
+def join_col_or_ddash(colname):
+    def wrapped(obj):
+        iterator = getattr(obj, colname, None)
+        if iterator is None:
+            return '--'
+        return ', '.join(map(str, iterator))
+    return wrapped
+
+
 def print_to_construct(empire):
-    raise NotImplementedError()
+    empire.name = 'Empire'
+    print_lines(([empire], empire),
+                default_col('name'),
+                default_col('key'),
+                ('to construct', join_col_or_ddash('to_construct')),
+                ('plans commanded', join_col_or_ddash('_planner_plans')),
+                ('plans', join_col_or_ddash('planner_next_plans')),
+                )
 
 
 def unknown_display(display):

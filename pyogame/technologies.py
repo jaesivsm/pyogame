@@ -138,9 +138,11 @@ class Graviton(Technology):
     requirements = [Laboratory(12)]
 
 
+_tech_reg = {tech_cls().name: tech_cls
+             for tech_cls in Technology.__subclasses__()}
+
 class Technologies(ConstructCollection):
 
     @property
     def registry(self):
-        return {tech_cls().name: tech_cls
-                for tech_cls in Technology.__subclasses__()}
+        return _tech_reg

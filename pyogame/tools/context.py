@@ -43,20 +43,23 @@ class Context:
 
     @property
     def empire(self):
-        if self._empire:
-            return self._empire
+        if not self._empire:
 
-        logger.debug('Loading objects from %r', CACHE_PATH_TEMPLATE)
-        self._empire = PlanetCollection({}, capital=self.conf.get('capital'))
+            logger.debug('Loading objects from %r', CACHE_PATH_TEMPLATE)
+            self._empire = PlanetCollection({}, capital=self.conf.get('capital'))
 
-        try:
-            cache = self.load().get(self._username, None)
-            if not cache:
+            try:
+                cache = self.load().get(self._username, None)
+                if not cache:
+                    return self._empire
+                self._empire.load(cache)
+            except ValueError:
+                logger.error('Cache has been corrupted, ignoring it')
                 return self._empire
-            self._empire.load(cache)
-        except ValueError:
-            logger.error('Cache has been corrupted, ignoring it')
-            return self._empire
+
+        self._empire.planner_remove_old()
+        for planet in self._empire:
+            planet.planner_remove_old()
         return self._empire
 
     @staticmethod

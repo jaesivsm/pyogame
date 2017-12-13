@@ -8,26 +8,46 @@ logger = logging.getLogger(__name__)
 
 def in_place_empire_upgrade(interface, empire, construct_on_capital=True):
     logger.debug('### In place empire upgrade')
-    plan = empire.empire_next_plan(empire.capital)
-    if not empire.is_researching \
-            and plan \
-            and plan.cost <= empire.capital.resources:
-        logger.warning("Resources are available on %s to construct %s "
-                       "(lvl %d)", empire.capital, plan.name,
-                       plan.level + 1)
-        interface.construct(plan, empire.capital)
+    tech_plans = list(empire.planner_next_plans)
+    if not empire.is_researching and tech_plans:
+        for plan in tech_plans:
+            if plan.cost <= empire.capital.resources:
+                logger.warning("Resources are available on %s to construct %s "
+                               "(lvl %d)", empire.capital, plan.name,
+                               plan.level + 1)
+                interface.construct(plan, empire.capital)
+                break
     for planet in empire.idles:
         if planet.capital and not construct_on_capital:
             continue
-        planet, construct = empire.requirements_for(
-                planet, planet.to_construct(empire.filter_out_if_researching))
-        logger.debug('%r > %r = %r', planet.resources, construct.cost,
-                     planet.resources >= construct.cost)
-        if planet.resources >= construct.cost:
-            logger.warning("Resources are available on %s to construct %s "
-                           "(lvl %d)", planet, construct.name,
-                           construct.level + 1)
-            interface.construct(construct, planet)
+        launched, have_plans = False, False
+        for plan in planet.planner_next_plans:
+            have_plans = True
+            logger.debug('%r > %r = %r', planet.resources, plan.cost,
+                         planet.resources >= plan.cost)
+            if plan.cost <= planet.resources:
+                logger.warning("Resources are available on %s to realise "
+                               "plan %s (lvl %d)", planet, plan.name,
+                                plan.level)
+
+                launched = True
+                interface.construct(plan, planet)
+                break
+        if launched:
+            continue
+        if have_plans:
+            logger.info("Won't construct on %r, planet have plans", planet)
+            continue
+
+        for construct in planet.to_construct:
+            logger.debug('%r > %r = %r', planet.resources,
+                        construct.cost, planet.resources >= construct.cost)
+            if planet.resources >= construct.cost:
+                logger.warning("Resources are available on %s to construct %s "
+                               "(lvl %d)", planet, construct.name,
+                               construct.level)
+                interface.construct(construct, planet)
+                break
 
 
 def rapatriate(interface, empire, destination=None):
@@ -53,7 +73,7 @@ def rapatriate(interface, empire, destination=None):
         transport(interface, empire, source, destination, all_ships=True)
 
 
-def plan_construction(interface, empire, construct_on_capital=True):
+def plan_construction(interface, empire, construct_on_capital=False):
     logger.debug('### plan construction')
     source = empire.capital
     while True:
@@ -61,6 +81,7 @@ def plan_construction(interface, empire, construct_on_capital=True):
         if not planet:
             logger.info("No eligible planet for construction")
             break
+
         cost = construct.cost
         logger.info("Willing to construct %s on %s for %s",
                     construct, planet, cost.movable)
@@ -75,9 +96,9 @@ def plan_construction(interface, empire, construct_on_capital=True):
             break
 
         logger.warning('Sending resources to construct %s on %s',
-                       construct, planet)
+                    construct, planet)
         travel_id = transport(interface, empire,
-                              source, planet, resources=cost)
+                            source, planet, resources=cost)
 
         planet.waiting_for[travel_id] = construct.name
 

@@ -81,12 +81,15 @@ class NaniteFactory(StationBuilding):
     position = 5
 
 
+_construct_reg = {cls().name: cls for cls in (
+                        ResourcesBuilding.__subclasses__()
+                        + StationBuilding.__subclasses__()
+                        + Tank.__subclasses__()
+                  ) if cls is not Tank}
+
+
 class Constructions(ConstructCollection):
 
     @property
     def registry(self):
-        return {cls().name: cls for cls in (
-                        ResourcesBuilding.__subclasses__()
-                        + StationBuilding.__subclasses__()
-                        + Tank.__subclasses__()
-                ) if cls is not Tank}
+        return _construct_reg

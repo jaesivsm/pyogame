@@ -1,5 +1,4 @@
 import logging
-from pyogame.tools.common import cheapest
 
 logger = logging.getLogger(__name__)
 
@@ -26,12 +25,15 @@ class PlannerMixin:
     def _planner_get_curr(self, obj):
         return self._planner_collection.cond(name=obj.name).first
 
-    def planner_next_plan(self, filter_meth):
+    @property
+    def planner_next_plans(self):
         if not self._planner_plans.data:
-            return None
-        return cheapest(filter(filter_meth,
-                               [self.requirements_for(plan)
-                                for plan in self._planner_plans]))
+            return
+        requirements = {}
+        for plan in self._planner_plans:
+            for req in self.requirements_for(plan):
+                requirements[req.name] = req
+        yield from requirements.values()
 
     def planner_add(self, plan_name, level=None):
         # checking type

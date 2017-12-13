@@ -64,7 +64,7 @@ if __name__ == "__main__":
         if planet_key is not None:
             for planet in context.empire:
                 if planet.key == planet_key:
-                    planet.add_construction_plan(construct_name, level)
+                    planet.planner_add(construct_name, level)
         elif construct_name is not None and level is not None:
             context.empire.capital.planner_add(construct_name, level)
     elif args.tech:
