@@ -94,7 +94,8 @@ def join_col_or_ddash(colname):
         iterator = getattr(obj, colname, None)
         if iterator is None:
             return '--'
-        return ', '.join(map(str, iterator))
+        return ', '.join(['%s %s' % (building, building.cost)
+                          for building in iterator])
     return wrapped
 
 

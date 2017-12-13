@@ -16,13 +16,13 @@ class Collection:
         return self.data.clear()
 
     def __iter__(self):
-        for item in self.data.values():
+        for key in sorted(self.data):
             try:
-                for key in self.filters:
-                    if getattr(item, key) == self.filters[key]:
+                for fkey in self.filters:
+                    if getattr(self.data[key], fkey) == self.filters[fkey]:
                         continue
                     raise FilterFailed()
-                yield item
+                yield self.data[key]
             except FilterFailed:
                 pass
 
