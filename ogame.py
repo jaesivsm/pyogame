@@ -48,6 +48,8 @@ if __name__ == "__main__":
             tools.ui.print_overall_status(context.empire)
         elif args.ui == 'toconstruct':
             tools.ui.print_to_construct(context.empire)
+        elif args.ui == 'buildings':
+            tools.ui.print_empire_buildings(context.empire)
         else:
             tools.ui.unknown_display(args.ui)
 
