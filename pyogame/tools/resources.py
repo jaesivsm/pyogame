@@ -1,17 +1,26 @@
 RES_TYPES = ['metal', 'crystal', 'deuterium', 'energy']
+SPLIT = 3
+UNITS = 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'
+MULTIPLE = {(i + 1) * 3: u for i, u in enumerate(UNITS)}
 
 
-def pretty_number(number, split=3, short=True):
+
+def pretty_number(number, short=True):
     number = str(int(number))
-    browse = zip(range(-split, -len(number)-split, -split),
-                 range(0, -len(number)-split, -split))
+    browse = zip(range(-SPLIT, -len(number) - SPLIT, -SPLIT),
+                 range(0, -len(number) - SPLIT, -SPLIT))
     lst = [number[start:end if end else None] for start, end in browse][::-1]
-    if not short:
-        return '.'.join(lst)
-    multiple = {3: 'k', 6: 'M', 9: 'G', 12: 'T',
-                15: 'P', 18: 'E', 21: 'Z', 24: 'Y'}
-    precis = 1 if len(lst[0]) > 1 else 2
-    return '.'.join(lst[:precis]) + multiple.get((len(lst)-precis) * split, '')
+    result = lst[0]
+    unit = MULTIPLE.get((len(lst)-1) * SPLIT, '')
+    if short or len(lst) <= 1:
+        if len(lst) <= 1:
+            return result + unit
+        return str(int(result) + (1 if int(lst[1]) > 500 else 0)) + unit
+    if lst[1] == '000':
+        return result + unit
+    if lst[1][1:3] == '00':
+        return result + unit + lst[1][0]
+    return result + unit + lst[1]
 
 
 class Resources:

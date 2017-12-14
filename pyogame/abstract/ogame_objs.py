@@ -40,7 +40,7 @@ class AbstractConstruct(AbstractOgameObj):
 
     def _cost(self, res, level=None):
         level = level if level else self.level
-        return getattr(self, 'base_%s_cost' % res) * pow(self.power, level)
+        return getattr(self, 'base_%s_cost' % res) * pow(self.power, level - 1)
 
     @property
     def css_dom(self):
@@ -54,7 +54,7 @@ class AbstractConstruct(AbstractOgameObj):
                 energy=self._energy(self.level + 1) - self._energy(self.level))
 
     def _energy(self, level):
-        return self.energy_factor * level * pow(1.1, level)
+        return self.energy_factor * (level - 1) * pow(1.1, level)
 
     def __repr__(self):
         return "<%s(%d)>" % (self.__class__.__name__, self.level)
