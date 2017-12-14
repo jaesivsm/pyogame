@@ -13,7 +13,7 @@ class AbstractOgameObj:
         name = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', self.__class__.__name__)
         return re.sub('([a-z0-9])([A-Z])', r'\1_\2', name).lower()
 
-    def copy(self):
+    def copy(self, **kwargs):
         raise NotImplementedError()
 
     @property
@@ -62,8 +62,8 @@ class AbstractConstruct(AbstractOgameObj):
     def __str__(self):
         return "%s (lvl %d)" % (self.name, self.level)
 
-    def copy(self):
-        return self.__class__(self.level)
+    def copy(self, **kwargs):
+        return self.__class__(kwargs.get('level') or self.level)
 
     def dump(self):
         return {'level': self.level}
@@ -94,8 +94,8 @@ class AbstractMultiConstruct(AbstractOgameObj):
     def xpath(self):
         raise NotImplementedError()
 
-    def copy(self):
-        return self.__class__(self.quantity)
+    def copy(self, **kwargs):
+        return self.__class__(kwargs.get('quantity') or self.quantity)
 
     def __len__(self):
         return self.quantity
@@ -167,8 +167,8 @@ class Ships(AbstractMultiConstruct):
     def capacity(self):
         return self.quantity * self.single_ship_capacity
 
-    def copy(self):
-        return self.__class__(self.quantity)
+    def copy(self, **kwargs):
+        return self.__class__(kwargs.get('quantity') or self.quantity)
 
 
 class CivilShips(Ships):

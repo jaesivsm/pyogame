@@ -24,9 +24,10 @@ class Planet(PlannerMixin):
         self.plans = kwargs.get('plans', Constructions())
         PlannerMixin.__init__(self, 'constructs', 'plans')
 
-    def get_curr(self, obj):
-        return self.constructs.cond(
+    def get_curr(self, obj, bump_level=False):
+        curr = self.constructs.cond(
                 name=obj if isinstance(obj, str) else obj.name).first
+        return curr.copy(curr.level) if bump_level else curr
 
     @property
     def key(self):
@@ -113,7 +114,8 @@ class Planet(PlannerMixin):
                 to_construct = self.get_curr('metal_tank')
             elif should_build_tank('crystal', 9):
                 to_construct = self.get_curr('crystal_tank')
-        yield from self.requirements_for(to_construct)
+        yield from self.requirements_for(
+                to_construct.copy(level=to_construct.level + 1))
 
     @classmethod
     def load(cls, **kwargs):
