@@ -8,7 +8,7 @@ def pstr(value, is_title=False):
     if isinstance(value, (list, set, tuple)):
         value = value[0]
     if is_title:
-        return ' '.join(v.capitalize() for v in value.split())
+        return ' '.join(v for v in value.split())
     if isinstance(value, bool):
         return '+' if value else ''
     if isinstance(value, int):
@@ -51,42 +51,13 @@ def print_lines(iterables, *columns):
     print(sep_line)
 
 
-def default_col(key):
-    return key.split('_')[-1][0:4], lambda x: getattr(x, key, '--')
+def default_col(ke):
+    return ke.split('_')[-1][0:4].capitalize(), lambda x: getattr(x, ke, '--')
 
 
 def construct_level_col(key, title=None):
-    return title or key[0:4], lambda x: x.constructs.cond(name=key).first.level
-
-
-def print_overall_status(empire):
-    print_lines((empire,),
-                default_col('name'),
-                default_col('key'),
-                default_col('capital'),
-                default_col('is_idle'),
-                default_col('is_waiting'),
-                ('resources', lambda x: x.resources),
-                ('f m', lambda x: x.is_metal_tank_full),
-                ('f c', lambda x: x.is_crystal_tank_full),
-                ('f d', lambda x: x.is_deuterium_tank_full),
-                ('transport', lambda x: x.fleet.capacity))
-
-
-def print_empire_buildings(empire):
-    print_lines((empire,),
-                default_col('name'),
-                default_col('key'),
-                construct_level_col('metal_mine'),
-                construct_level_col('crystal_mine'),
-                construct_level_col('deuterium_synthetizer'),
-                construct_level_col('solar_plant'),
-                construct_level_col('metal_tank', 't m'),
-                construct_level_col('crystal_tank', 't c'),
-                construct_level_col('deuterium_tank', 't d'),
-                construct_level_col('robot_factory'),
-                construct_level_col('shipyard'),
-                construct_level_col('laboratory'))
+    return title or key[0:4].capitalize(), \
+            lambda x: x.constructs.cond(name=key).first.level
 
 
 def join_col_or_ddash(colname):
@@ -99,14 +70,55 @@ def join_col_or_ddash(colname):
     return wrapped
 
 
+def tech_to_col(tech):
+    return ''.join(name[0:4].capitalize() for name in tech.name.split('_')), \
+            lambda x: tech.level
+
+
+def print_technologies(empire):
+    print_lines([[None]],
+                *[tech_to_col(tech) for tech in empire.technologies])
+
+
+def print_overall_status(empire):
+    print_lines((empire,),
+                default_col('name'),
+                default_col('key'),
+                default_col('capital'),
+                default_col('is_idle'),
+                default_col('is_waiting'),
+                ('Resources', lambda x: x.resources),
+                ('F M', lambda x: x.is_metal_tank_full),
+                ('F C', lambda x: x.is_crystal_tank_full),
+                ('F D', lambda x: x.is_deuterium_tank_full),
+                ('Transport', lambda x: x.fleet.capacity))
+
+
+def print_empire_buildings(empire):
+    print_lines((empire,),
+                default_col('name'),
+                default_col('key'),
+                construct_level_col('metal_mine'),
+                construct_level_col('crystal_mine'),
+                construct_level_col('deuterium_synthetizer'),
+                construct_level_col('solar_plant'),
+                construct_level_col('metal_tank', 'T M'),
+                construct_level_col('crystal_tank', 'T C'),
+                construct_level_col('deuterium_tank', 'T D'),
+                construct_level_col('robot_factory'),
+                construct_level_col('shipyard'),
+                construct_level_col('laboratory'))
+
 def print_to_construct(empire):
     empire.name = 'Empire'
     print_lines(([empire], empire),
                 default_col('name'),
                 default_col('key'),
-                ('to construct', join_col_or_ddash('to_construct')),
-                ('plans commanded', join_col_or_ddash('_planner_plans')),
-                ('plans', join_col_or_ddash('planner_next_plans')),
+                ('Construct decided by algo',
+                    join_col_or_ddash('to_construct')),
+                ('Plans registred', join_col_or_ddash('_planner_plans')),
+                ('Next construct by plans',
+                    join_col_or_ddash('planner_next_plans')),
                 )
 
 

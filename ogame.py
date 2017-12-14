@@ -50,6 +50,8 @@ if __name__ == "__main__":
             tools.ui.print_to_construct(context.empire)
         elif args.ui == 'buildings':
             tools.ui.print_empire_buildings(context.empire)
+        elif args.ui == 'technologies':
+            tools.ui.print_technologies(context.empire)
         else:
             tools.ui.unknown_display(args.ui)
 
