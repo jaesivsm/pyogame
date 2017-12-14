@@ -6,6 +6,11 @@ from pyogame.tools.common import coords_to_key
 from pyogame.abstract.planner import PlannerMixin
 
 logger = logging.getLogger(__name__)
+DEUT_TO_MET_OFFSET = -7
+CRYS_TO_MET_OFFSET = -3
+ROB_TO_SOL_RATIO = 2.4
+MET_TANK_RATIO = 7
+CRYS_TANK_RATIO = 9
 
 
 class Planet(PlannerMixin):
@@ -86,36 +91,44 @@ class Planet(PlannerMixin):
         metal_tank = self.get_curr('metal_tank')
         crystal_tank = self.get_curr('crystal_tank')
         deut_tank = self.get_curr('deuterium_tank')
+        solar_plant = self.get_curr('solar_plant')
 
-        to_construct = metal_mine
-        if self.get_curr('deuterium_synthetizer').level < metal_mine.level - 7:
-            to_construct = self.get_curr('deuterium_synthetizer')
-        if self.get_curr('crystal_mine').level < metal_mine.level - 3:
-            to_construct = self.get_curr('crystal_mine')
+        trigger_crys_lvl = metal_mine.level - CRYS_TO_MET_OFFSET
+        trigger_deut_lvl = metal_mine.level - DEUT_TO_MET_OFFSET
+        trigger_rob_lvl = int(solar_plant.level / ROB_TO_SOL_RATIO)
+
+        cnstr = metal_mine
+        if self.get_curr('crystal_mine').level < trigger_crys_lvl:
+            cnstr = self.get_curr('crystal_mine')
+        elif self.get_curr('deuterium_synthetizer').level < trigger_deut_lvl:
+            cnstr = self.get_curr('deuterium_synthetizer')
         # more or less 5%
-        if to_construct.cost.energy * .95 > self.resources.energy:
-            to_construct = self.get_curr('solar_plant')
+        if cnstr.cost.energy * .95 > self.resources.energy:
+            cnstr = solar_plant
+            if self.get_curr('robot_factory').level < trigger_rob_lvl:
+                cnstr = self.get_curr('robot_factory')
+                if cnstr.level >= 10:
+                    cnstr = self.get_curr('nanite_factory')
         if self.capital:
-            if metal_tank.capacity < to_construct.cost.metal \
+            if metal_tank.capacity < cnstr.cost.metal \
                     or self.is_metal_tank_full:
-                to_construct = metal_tank
-            elif crystal_tank.capacity < to_construct.cost.crystal \
+                cnstr = metal_tank
+            elif crystal_tank.capacity < cnstr.cost.crystal \
                     or self.is_crystal_tank_full:
-                to_construct = crystal_tank
-            elif deut_tank.capacity < to_construct.cost.deuterium \
+                cnstr = crystal_tank
+            elif deut_tank.capacity < cnstr.cost.deuterium \
                     or self.is_deuterium_tank_full:
-                to_construct = deut_tank
+                cnstr = deut_tank
         else:
             def should_build_tank(res_type, ratio):
                 mine = self.get_curr('%s_mine' % res_type)
                 tank = self.get_curr('%s_tank' % res_type)
                 return float(mine.level) / (1 + tank.level) > ratio
-            if should_build_tank('metal', 7):
-                to_construct = self.get_curr('metal_tank')
-            elif should_build_tank('crystal', 9):
-                to_construct = self.get_curr('crystal_tank')
-        yield from self.requirements_for(
-                to_construct.copy(level=to_construct.level + 1))
+            if should_build_tank('metal', MET_TANK_RATIO):
+                cnstr = self.get_curr('metal_tank')
+            elif should_build_tank('crystal', CRYS_TANK_RATIO):
+                cnstr = self.get_curr('crystal_tank')
+        yield from self.requirements_for(cnstr.copy(level=cnstr.level + 1))
 
     @classmethod
     def load(cls, **kwargs):

@@ -119,9 +119,11 @@ class PlanetCollection(Collection, PlannerMixin):
         self.technologies = Technologies.load(
                 **data.get('technologies', {}))
         self.plans = Technologies.load(**data.get('plans', {}))
+        self.is_researching = data.get('is_researching', False)
 
     def dump(self):
         return {'planets': [planet.dump() for planet in self],
+                'is_researching': self.is_researching,
                 'technologies': {'data': self.technologies.dump()},
                 'plans': {'data': self.plans.dump()},
                 'missions': {'data': self.missions.dump()}}

@@ -84,6 +84,7 @@ def print_overall_status(empire):
     print_lines((empire,),
                 default_col('name'),
                 default_col('key'),
+                ('Researching', lambda x: empire.is_researching),
                 default_col('capital'),
                 default_col('is_idle'),
                 default_col('is_waiting'),
