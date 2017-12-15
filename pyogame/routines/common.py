@@ -22,7 +22,7 @@ def transport(interface, empire, src, dst, all_ships=False, resources=None):
     sent_fleet = interface.send_fleet(src, dst, 'transport', fleet, resources)
     logger.warning('Moving %s from %s to %s arriving at %s',
                    res_msg, src, dst, sent_fleet.arrival_time.isoformat())
-    return empire.missions.add(fleet=sent_fleet)
+    return empire.missions.add(sent_fleet)
 
 
 def spy(interface, empire, src, dst, nb_probe=1):
@@ -32,7 +32,7 @@ def spy(interface, empire, src, dst, nb_probe=1):
     fleet.first.quantity = nb_probe
     sent_fleet = interface.send_fleet(src, dst, 'spy', fleet)
     logger.warning('Spying on %r (arriving at %r)', dst, sent_fleet.arrival_time)
-    return empire.missions.add(fleet=sent_fleet)
+    return empire.missions.add(sent_fleet)
 
 
 def recycle(interface, empire, src, dst, debris_content):
@@ -42,4 +42,4 @@ def recycle(interface, empire, src, dst, debris_content):
             fleet.of_type(Recycler).for_moving(debris_content), dtype='debris')
     logger.warning('Going to recycle debris (%s) at %s (arriving at %s)',
                    debris_content, dst, sent_fleet.arrival_time.isoformat())
-    return empire.missions.add(fleet=sent_fleet)
+    return empire.missions.add(sent_fleet)

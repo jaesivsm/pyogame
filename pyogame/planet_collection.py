@@ -115,7 +115,7 @@ class PlanetCollection(Collection, PlannerMixin):
     def load(self, data):
         for planet_dict in data.get('planets', {}):
             self.add(Planet.load(**planet_dict))
-        self.missions = Missions.load(**data.get('missions', {}))
+        self.missions = Missions.load(**data.get('missions', {'data': {}}))
         self.technologies = Technologies.load(
                 **data.get('technologies', {}))
         self.plans = Technologies.load(**data.get('plans', {}))

@@ -71,9 +71,25 @@ class Collection:
 
 class AbstractOgameObjConstruct(Collection):
 
+    def __init__(self, data=None):
+        super().__init__({})
+        data = data or {}
+        for key in self.registry:
+            if key in data:
+                self.add(self._instantiate_from_registry(key, data[key]))
+            else:
+                self.add(self.registry[key](0))
+
     @property
     def registry(self):
         raise NotImplementedError("collection need a registry of obj to list")
+
+    def _instantiate_from_registry(self, name, kwargs):
+        if isinstance(kwargs, dict):
+            return self.registry[name](**kwargs)
+        elif isinstance(kwargs, tuple(self.registry.values())):
+            return kwargs
+        raise TypeError('Unknown value for %r' % kwargs)
 
     @classmethod
     def load(cls, data):
@@ -88,13 +104,6 @@ class AbstractOgameObjConstruct(Collection):
 
 
 class ConstructCollection(AbstractOgameObjConstruct):
-
-    def __init__(self, data=None):
-        super().__init__(data)
-        data = data or {}
-        for key in self.registry:
-            if key not in data:
-                self.add(self.registry[key](0))
 
     @property
     def registry(self):
@@ -112,7 +121,7 @@ class ConstructCollection(AbstractOgameObjConstruct):
         if obj.name in self.data:
             self.data[obj.name].level = obj.level
         else:
-            self.data[obj.name] = obj.copy()
+            self.data[obj.name] = obj
 
     def remove(self, obj):
         return self.data.pop(obj.name, None)
@@ -128,7 +137,7 @@ class MultiConstructCollection(AbstractOgameObjConstruct):
         if obj.name in self.data:
             self.data[obj.name].quantity += obj.quantity
         else:
-            self.data[obj.name] = obj.copy()
+            self.data[obj.name] = obj
 
     def remove(self, obj):
         if not obj.quantity:

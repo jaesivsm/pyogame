@@ -61,5 +61,3 @@ class Ships(MultiConstructCollection):
                 for ship_cls in CivilShips.__subclasses__()}
 
 SHIPS = Ships()
-for ship in SHIPS.registry.values():
-    SHIPS.add(ship(0))

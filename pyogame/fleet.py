@@ -62,7 +62,7 @@ class Fleet(Ships):
 
 class FlyingFleet(Fleet):
 
-    def __init__(self, data, src, dst, flight_type=None, travel_id=None,
+    def __init__(self, src, dst, data=None, flight_type=None, travel_id=None,
             arrival_time=None, return_time=None):
         super().__init__(data)
         self.src = coords_to_key(src)
@@ -79,6 +79,10 @@ class FlyingFleet(Fleet):
         self.return_time = return_time
 
     @property
+    def key(self):
+        return self.travel_id
+
+    @property
     def is_arrived(self):
         return self.arrival_time < datetime.datetime.now()
 
@@ -87,13 +91,11 @@ class FlyingFleet(Fleet):
         return self.return_time < datetime.datetime.now()
 
     def dump(self):
-        dump = super().dump()
-        dump.update({'travel_id': self.travel_id,
+        return {'data': super().dump(),
+                'travel_id': self.travel_id,
                 'flight_type': self.flight_type,
                 'src': self.src, 'arrival_time': self.arrival_time,
-                'dst': self.dst, 'return_time': self.return_time,
-        })
-        return dump
+                'dst': self.dst, 'return_time': self.return_time}
 
     def __repr__(self):
         return r'<Fleet %s (%r->%r)>' % (self.travel_id.split('-', 1)[0],
@@ -129,9 +131,9 @@ class Missions(Collection):
     @classmethod
     def load(cls, data):
         missions = cls()
-        for mission in data.values():
-            missions.add(FlyingFleet(**mission))
+        for travel_id, mission in data.items():
+            missions.data[travel_id] = FlyingFleet(**mission)
         return missions
 
     def dump(self):
-        return {fleet.travel_id: fleet.dump() for fleet in self}
+        return {key: value.dump() for key, value in self.data.items()}

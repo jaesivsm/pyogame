@@ -29,6 +29,9 @@ class Planet(PlannerMixin):
         self.plans = kwargs.get('plans', Constructions())
         PlannerMixin.__init__(self, 'constructs', 'plans')
 
+        for ships in [ships for ships in self.fleet if not ships.quantity]:
+            self.fleet.remove(ships)
+
     def get_curr(self, obj, bump_level=False):
         curr = self.constructs.cond(
                 name=obj if isinstance(obj, str) else obj.name).first

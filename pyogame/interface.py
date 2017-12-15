@@ -139,6 +139,8 @@ class Interface:
                 continue
             for pos, element in enumerate(fleet[0]):
                 quantity = int(element.text_content().split()[-1])
+                if not quantity:
+                    continue
                 ships = SHIPS.cond(position=pos, ship_type=ship_type).first
                 if ships is not None:
                     planet.fleet.add(ships.copy(quantity=quantity))
@@ -221,7 +223,7 @@ class Interface:
 
     def get_date(self, css_id):
         date = re.split(r'[\.: ]',
-                self.driver.find_element_by_css_selector(
+                self.driver.find_element_by_xpath(
                     "//span[@id='%s']" % css_id).text)
         day, month, year, hour, minute, second = [int(i) for i in date]
         return datetime(year + 2000, month, day, hour, minute, second)
@@ -234,18 +236,19 @@ class Interface:
 
         dst = dst.coords if isinstance(dst, Planet) else dst
 
-        sent_fleet = FlyingFleet(src.coords, dst, mission)
+        sent_fleet = FlyingFleet(src=src.coords, dst=dst, flight_type=mission)
         for ships in fleet:
             self.driver.find_element_by_id('ship_%d' % ships.ships_id)\
                     .send_keys(ships.quantity)
-            sent_fleet.add(ships=ships)
-            src.fleet.remove(ships=ships)
+            sent_fleet.add(ships)
+            src.fleet.remove(ships)
 
         self.click(css="#continue > span")
 
-        self.driver.find_element_by_id("galaxy").send_keys(dst[0])
-        self.driver.find_element_by_id("system").send_keys(dst[1])
-        self.driver.find_element_by_id("position").send_keys(dst[2])
+        for index, type_ in enumerate(['galaxy', 'system', 'position']):
+            elem = self.driver.find_element_by_id(type_)
+            elem.clear()
+            elem.send_keys(dst[index])
         self.click(id_=MISSIONS_DST[dtype])
         self.click(css="#continue > span")
 
