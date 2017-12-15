@@ -140,9 +140,8 @@ class Interface:
             for pos, element in enumerate(fleet[0]):
                 quantity = int(element.text_content().split()[-1])
                 ships = SHIPS.cond(position=pos, ship_type=ship_type).first
-                if ships is None:
-                    continue
-                planet.fleet.add(ships.copy(quantity=quantity))
+                if ships is not None:
+                    planet.fleet.add(ships.copy(quantity=quantity))
         logger.debug('%s got fleet %s', planet, planet.fleet)
 
     def update_empire_state(self, empire):
@@ -222,7 +221,7 @@ class Interface:
 
     def get_date(self, css_id):
         date = re.split(r'[\.: ]',
-                self.driver.find_element_by_xpath(
+                self.driver.find_element_by_css_selector(
                     "//span[@id='%s']" % css_id).text)
         day, month, year, hour, minute, second = [int(i) for i in date]
         return datetime(year + 2000, month, day, hour, minute, second)
