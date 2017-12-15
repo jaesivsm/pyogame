@@ -156,7 +156,7 @@ class Planet(PlannerMixin):
                 self.name, self.coords, self.position)
 
     def __str__(self):
-        return '%s %r' % (self.name, self.coords)
+        return '%s %r' % (self.name, coords_to_key(self.coords))
 
     def __eq__(self, other):
         if isinstance(other, Planet) and other.coords == self.coords:

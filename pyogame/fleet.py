@@ -3,19 +3,15 @@ import datetime
 import dateutil.parser
 from uuid import uuid4
 
-from pyogame.ships import SHIPS_TYPES
+from pyogame.ships import Ships
 from pyogame.tools.resources import pretty_number
 from pyogame.tools.common import coords_to_key
-from pyogame.abstract.collections import Collection, MultiConstructCollection
+from pyogame.abstract.collections import Collection
 
 logger = logging.getLogger(__name__)
 
 
-class Fleet(MultiConstructCollection):
-
-    @property
-    def registry(self):
-        return SHIPS_TYPES
+class Fleet(Ships):
 
     @property
     def capacity(self):

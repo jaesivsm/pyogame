@@ -6,9 +6,10 @@ from pyogame.routines.common import transport
 logger = logging.getLogger(__name__)
 
 
-def in_place_empire_upgrade(interface, empire, construct_on_capital=True):
+def in_place_empire_upgrade(interface, empire):
     logger.debug('### In place empire upgrade')
     tech_plans = list(empire.planner_next_plans)
+    construct_on_capital = len(empire) > 1
     if not empire.is_researching and tech_plans:
         for plan in tech_plans:
             if plan.cost <= empire.capital.resources:
@@ -73,9 +74,10 @@ def rapatriate(interface, empire, destination=None):
         transport(interface, empire, source, destination, all_ships=True)
 
 
-def plan_construction(interface, empire, construct_on_capital=False):
+def plan_construction(interface, empire):
     logger.debug('### plan construction')
     source = empire.capital
+    construct_on_capital = len(empire) > 1
     while True:
         planet, construct = empire.idles.cheapest(construct_on_capital)
         if not planet:

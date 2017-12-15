@@ -11,6 +11,7 @@ from selenium.webdriver.support.ui import Select
 
 
 from pyogame.planet import Planet
+from pyogame.ships import SHIPS
 from pyogame.fleet import FlyingFleet
 from pyogame.tools.const import MISSIONS, MISSIONS_DST, Pages
 from pyogame.tools.resources import RES_TYPES, Resources
@@ -131,22 +132,17 @@ class Interface:
         logger.info('updating fleet states on %s', planet)
         planet.fleet.clear()
         source = html.fromstring(self.driver.page_source)
-        for fleet_type in 'military', 'civil':
-            fleet = source.xpath("//ul[@id='%s']" % fleet_type)
+        for ship_type in 'military', 'civil':
+            fleet = source.xpath("//ul[@id='%s']" % ship_type)
             if len(fleet) < 1:
-                logger.debug('No %s fleet on %s', fleet_type, planet)
+                logger.debug('No %s fleet on %s', ship_type, planet)
                 continue
-            for ships in fleet[0]:
-                ships_id = ships.get('id')
-                if 'button' in ships_id:
-                    ships_id = int(ships_id[-3:])
-                cls = ships.find_class('level')
-                if len(cls) < 1:
+            for pos, element in enumerate(fleet[0]):
+                quantity = int(element.text_content().split()[-1])
+                ships = SHIPS.cond(position=pos, ship_type=ship_type).first
+                if ships is None:
                     continue
-                ships_str = cls[0].text_content().split()
-                planet.fleet.add(ships_id,
-                        name=' '.join(ships_str[:-1]),
-                        quantity=int(ships_str[-1].replace('.', '')))
+                planet.fleet.add(ships.copy(quantity=quantity))
         logger.debug('%s got fleet %s', planet, planet.fleet)
 
     def update_empire_state(self, empire):

@@ -173,6 +173,7 @@ class Ships(AbstractMultiConstruct):
 
 class CivilShips(Ships):
     position = 0
+    ship_type = 'civil'
 
     def xpath(self):
-        return "//ul[@id='civil']/li[%d]/div/a" % self.position
+        return "//ul[@id='civil']/li[%d]/div/a" % self.position + 1
