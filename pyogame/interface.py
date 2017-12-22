@@ -238,6 +238,8 @@ class Interface:
 
         sent_fleet = FlyingFleet(src=src.coords, dst=dst, flight_type=mission)
         for ships in fleet:
+            if not ships.quantity:
+                continue
             self.driver.find_element_by_id('ship_%d' % ships.ships_id)\
                     .send_keys(ships.quantity)
             sent_fleet.add(ships)

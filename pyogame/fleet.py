@@ -1,6 +1,7 @@
 import logging
 import datetime
 import dateutil.parser
+from math import ceil
 from uuid import uuid4
 
 from pyogame.ships import Ships
@@ -30,23 +31,17 @@ class Fleet(Ships):
                                pretty_number(self.capacity))
             return self
 
-        def cmp_func(x, y):
-            return x.capacity > y.capacity
+        def cmp_func(x):
+            return x.capacity
 
-        for ships in sorted(self, cmp=cmp_func, reverse=True):
+        for ships in sorted(self, key=cmp_func, reverse=True):
             if fleet.capacity > amount:
                 break
-            ships = ships.copy()
-            total_ship = ships.quantity
-            ships.quantity = amount / ships.single_ship_capacity
-            if ships.quantity > total_ship:
-                ships.quantity = total_ship
-
-            quantity_eq_capacity = amount % ships.single_ship_capacity == 0
-            is_ship_left = total_ship - ships.quantity > 0
-            if quantity_eq_capacity and is_ship_left:
-                ships.quantity += 1
-            fleet.add(ships=ships)
+            nb_ships = ceil(amount / ships.single_ship_capacity)
+            if nb_ships > ships.quantity:
+                fleet.add(ships.copy(quantity=ships.quantity))
+            else:
+                fleet.add(ships.copy(quantity=nb_ships))
         return fleet
 
     def of_type(self, *args):

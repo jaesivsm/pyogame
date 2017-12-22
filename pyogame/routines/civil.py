@@ -132,11 +132,15 @@ def resources_reception_and_construction(interface, empire):
             # have been delivered for on this planet
             waited_constr = waited_constructs[planet.key].count(construct)
             # we count how many of this construction are waiting on this planet
-            waited_travel = planet.waiting_for.values().count(construct)
+            waited_travel = list(planet.waiting_for.values()).count(construct)
             if waited_constr == waited_travel:
                 logger.warning("All fleet arrived to construct %s on %s, "
                                "launching construction.", construct, planet)
-                interface.construct(construct, planet)
-                for travel_id, c in planet.waiting_for.items():
-                    if c == construct:
-                        del planet.waiting_for[travel_id]
+                interface.construct(
+                        planet.constructs.cond(name=construct).first,
+                        planet)
+                for travel_id in [travel_id
+                                  for travel_id in planet.waiting_for
+                                  if construct == planet.waiting_for[travel_id]
+                                  ]:
+                    planet.waiting_for.pop(travel_id, None)

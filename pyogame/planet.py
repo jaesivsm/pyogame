@@ -6,8 +6,8 @@ from pyogame.tools.common import coords_to_key
 from pyogame.abstract.planner import PlannerMixin
 
 logger = logging.getLogger(__name__)
-DEUT_TO_MET_OFFSET = -7
-CRYS_TO_MET_OFFSET = -3
+DEUT_TO_MET_OFFSET = 7
+CRYS_TO_MET_OFFSET = 3
 ROB_TO_SOL_RATIO = 2.4
 MET_TANK_RATIO = 7
 CRYS_TANK_RATIO = 9
@@ -88,7 +88,7 @@ class Planet(PlannerMixin):
         yield building
 
     @property
-    def to_construct(self, filter_meth=None):
+    def to_construct(self):
         # Handling construction list
         metal_mine = self.get_curr('metal_mine')
         metal_tank = self.get_curr('metal_tank')
